@@ -94,6 +94,11 @@ OPTIONS:
 
 TBD
 
+Info about the map will go here. Stuff such as:
+* Starting zoom level
+* Starting bounding box
+* ???
+
 ## KML
 
 The `kml` command will parse `Placemark`'s from google kml files.
@@ -135,6 +140,12 @@ OPTIONS:
   --database, -d     Path to database file output
 ```
 
+### Todo
+
+- [x] Points (sorta)
+- [ ] Polylines
+- [ ] Polygons
+
 ## IOS Usage
 
 This was designed with the intent to download tiles into a single database file that has all tiles and placemark/polygons/etc required to render an offline map with satellite imagery.
@@ -171,7 +182,7 @@ Path for attributes file? (kml)
 > /Users/hiimtmac/Desktop/placemarks.kml
 Path for database file? (sqlite)
 > /Users/hiimtmac/Desktop/test.sqlite
-Saving 2236 points to database...
+Saving 3 points to database...
 Vacuuming Database...
 Vacuum Complete
 Done, thanks for playing!
