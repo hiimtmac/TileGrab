@@ -6,11 +6,9 @@
 //
 
 import Foundation
+import CoreLocation
 
-struct Coordinate {
-    let latitude: Double
-    let longitude: Double
-    
+extension CLLocationCoordinate2D {
     init(input: String) throws {
         let components = input.components(separatedBy: ",")
         guard components.count == 2 else {
@@ -25,14 +23,13 @@ struct Coordinate {
             throw Error.invalidLongitude
         }
         
-        self.latitude = lat
-        self.longitude = long
+        self.init(latitude: lat, longitude: long)
     }
     
-    func tileLocation(at coordinate: Coordinate, for zoom: Int) -> TileLocation {
-        let x = getXTile(location: coordinate, at: zoom)
-        let y = getXTile(location: coordinate, at: zoom)
-        return TileLocation.init(x: x, y: y, z: zoom)
+    func tileLocation(for zoom: Int) -> Tile {
+        let x = getXTile(location: self, at: zoom)
+        let y = getXTile(location: self, at: zoom)
+        return Tile(x: x, y: y, z: zoom)
     }
     
     enum Error: Swift.Error {
@@ -42,13 +39,13 @@ struct Coordinate {
     }
 }
 
-func getXTile(location: Coordinate, at zoom: Int) -> Int {
+func getXTile(location: CLLocationCoordinate2D, at zoom: Int) -> Int {
     let arg: Double = (location.longitude + 180)/360
     let powx: Double = pow(Double(2),Double(zoom))
     return Int(floor(arg * powx))
 }
 
-func getYTile(location: Coordinate, at zoom: Int) -> Int {
+func getYTile(location: CLLocationCoordinate2D, at zoom: Int) -> Int {
     let tanx = tan(location.latitude * (Double.pi / 180))
     let cosx = 1 / cos(location.latitude * (Double.pi / 180))
     let lnx = log(tanx + cosx)
@@ -56,16 +53,3 @@ func getYTile(location: Coordinate, at zoom: Int) -> Int {
     let powx = pow(Double(2),Double(zoom - 1))
     return Int(floor((1 - pix) * powx))
 }
-
-//func combinations(xs: [Int], ys: [Int], at zoom: Int) -> Set<TileLocation> {
-//    var tileSet: Set<TileLocation> = []
-//
-//    for x in xs {
-//        for y in ys {
-//            let tile = TileLocation(x: x, y: y, z: zoom)
-//            tileSet.insert(tile)
-//        }
-//    }
-//
-//    return tileSet
-//}

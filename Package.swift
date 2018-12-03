@@ -7,7 +7,9 @@ let package = Package(
     name: "TileGrab",
     dependencies: [
         .package(url: "https://github.com/groue/GRDB.swift.git", from: "3.5.0"),
-        .package(url: "https://github.com/vapor/console.git", from: "3.0.0")
+        .package(url: "https://github.com/vapor/console.git", from: "3.0.0"),
+        .package(url: "https://github.com/apple/swift-package-manager.git", from: "0.1.0"),
+        .package(url: "https://github.com/drmohundro/SWXMLHash.git", from: "4.7.0")
     ],
     targets: [
         .target(
@@ -15,6 +17,6 @@ let package = Package(
             dependencies: ["TileGrabCore"]),
         .target(
             name: "TileGrabCore",
-            dependencies: ["GRDB", "Console"]),
+            dependencies: ["GRDB", "Console", "Utility","SWXMLHash"]),
     ]
 )

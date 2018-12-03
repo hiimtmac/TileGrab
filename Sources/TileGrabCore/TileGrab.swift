@@ -1,6 +1,7 @@
 import Foundation
 import GRDB
 import Console
+import CoreLocation
 
 public final class TileGrab {
     private let arguments: [String]
@@ -11,78 +12,56 @@ public final class TileGrab {
     
     public func run() throws {
         let terminal = Terminal()
-
-        guard
-            arguments.count >= 3,
-            arguments[1] == "--name"
-        else {
-            throw Error.badInput
-        }
         
-        let name = arguments[2]
+        let inputManager = try InputManager(arguments: arguments, terminal: terminal)
         
-        let tl: String
-        if arguments.count >= 5, arguments[3] == "--top-left" {
-            tl = arguments[4]
-        } else {
-            tl = terminal.ask("Top left coordinate (lat,long):")
-        }
+        let dataManager = try DatabaseManager(name: inputManager.name, path: inputManager.path)
+        try dataManager.migrateDatabase()
         
-        let tlCoord = try Coordinate(input: tl)
-        
-        let br: String
-        if arguments.count >= 7, arguments[5] == "--bottom-right" {
-            br = arguments[6]
-        } else {
-            br = terminal.ask("Bottom right coordinate (lat,long):")
-        }
-
-        let brCoord = try Coordinate(input: br)
-        
-        let minZ: Int
-        if arguments.count >= 9, arguments[7] == "--min-zoom" {
-            minZ = Int(arguments[8])!
-        } else {
-            minZ = Int(terminal.ask("Minimum Zoom:"))!
-        }
-        
-        let maxZ: Int
-        if arguments.count >= 11, arguments[9] == "--max-zoom" {
-            maxZ = Int(arguments[10])!
-        } else {
-            maxZ = Int(terminal.ask("Maximum Zoom:"))!
-        }
-        
-        let region = try TileRegion(tl: tlCoord, br: brCoord, min: minZ, max: maxZ)
-        let tiles = region.tiles()
-        
-        let sizeString = try sizeForCount(tileCount: tiles.count)
-        
-        let summary: ConsoleText = "Top Left: " +
-            "\(tlCoord.latitude), \(tlCoord.longitude)".consoleText(color: .blue) +
-            " - Bottom Right: " +
-            "\(brCoord.latitude), \(brCoord.longitude)".consoleText(color: .blue) +
-            " - Min Zoom: " +
-            "\(minZ)".consoleText(color: .blue) +
-            " - Max Zoom: " +
-            "\(maxZ)".consoleText(color: .blue)
+        let tileCount = try dataManager.tileCount()
+        if tileCount == 0 {
+            terminal.output("Calculating tiles...")
+            let tileManager = TileManager(regions: inputManager.regions, terminal: terminal)
+            var tiles = tileManager.getTileLocations()
             
-        terminal.output(summary)
-        if !terminal.confirm("Download will grab \(sizeString) to ~/Desktop/\(name).sqlite. Continue?".consoleText()) {
+            if inputManager.skips {
+                let zooms = Array(inputManager.min...inputManager.max)
+                let filteredZooms = zooms.enumerated().compactMap { $0.offset % 2 == 0 ? $0.element : nil }
+                tiles = tiles.filter { filteredZooms.contains($0.z) }
+            }
+            
+            try dataManager.insertLocations(tiles)
+            
+            let summary: ConsoleText =
+                "\(inputManager.regions.count)".consoleText(color: .blue) +
+                    " region(s) covering ~" +
+                    "\(inputManager.regions.reduce(0, { $0 + $1.squareKM }))".consoleText(color: .blue) +
+                    " square km - Min/Max Zoom: " +
+                    "\(inputManager.min)".consoleText(color: .blue) +
+                    " / " +
+                    "\(inputManager.max)".consoleText(color: .blue) +
+                    "\(inputManager.skips ? " skipping every second layer": "")".consoleText()
+            
+            terminal.output(summary)
+        }
+        
+        let tilesToFetch = try dataManager.tileWithoutData()
+        
+        let sizeString = try sizeForCount(tileCount: tilesToFetch.count)
+
+        if !terminal.confirm("Download will grab \(sizeString) to \(inputManager.path)/\(inputManager.name).sqlite. Continue?".consoleText()) {
             terminal.output("Oh well, maybe another time.")
             return
         }
         
-        let tileManager = try TileManager(tiles: tiles, name: name)
-        try tileManager.migrateDatabase()
-
+        let downloadManager = DownloadManager(databaseManager: dataManager, terminal: terminal)
         let group = DispatchGroup()
-        tileManager.fetchMap(group: group, terminal: terminal)
+        downloadManager.fetchMap(tiles: tilesToFetch, group: group)
         group.wait()
-        
+
         terminal.output("Download Complete".consoleText(color: .green))
-        
-        try tileManager.vacuumDataase()
+
+        try dataManager.vacuumDataase()
         terminal.output("Vacuum Complete".consoleText(color: .green))
 
         terminal.print("Done, thanks for playing!")
