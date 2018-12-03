@@ -53,3 +53,22 @@ func getYTile(location: CLLocationCoordinate2D, at zoom: Int) -> Int {
     let powx = pow(Double(2),Double(zoom - 1))
     return Int(floor((1 - pix) * powx))
 }
+
+func sizeForCount(tileCount: Int) -> String {
+    guard tileCount > 0 else {
+        return "No tiles."
+    }
+    
+    let avgByteSize = 15000.0
+    let sizes = ["Bytes", "KB", "MB", "GB", "TB"]
+    
+    let bytes = avgByteSize * Double(tileCount)
+    
+    let sizeIndex = Int(floor(log(bytes)) / log(1024.0))
+    let sizeString = sizes[sizeIndex]
+    let sizeDec = Decimal(bytes) / pow(1024, sizeIndex)
+    let sizeDoub = NSDecimalNumber(decimal: sizeDec).doubleValue
+    let sizeValue = round(sizeDoub)
+    
+    return "\(tileCount) tiles @ estimated \(sizeValue) \(sizeString)"
+}

@@ -11,11 +11,9 @@ import Console
 
 class TileManager {
     let regions: [TileRegion]
-    let terminal: Terminal
     
-    init(regions: [TileRegion], terminal: Terminal) {
+    init(regions: [TileRegion]) {
         self.regions = regions
-        self.terminal = terminal
     }
     
     func getTileLocations() -> [Tile] {

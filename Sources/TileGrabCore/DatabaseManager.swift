@@ -7,16 +7,21 @@
 
 import Foundation
 import GRDB
+import Console
 
 class DatabaseManager {
     let queue: DatabaseQueue
+    let terminal: Terminal
     
-    init(name: String, path: String) throws {
-        let config = Configuration()
-        let base = URL(fileURLWithPath: path, isDirectory: true)
-        let path = base.appendingPathComponent("\(name).sqlite")
+    init(path: String, deletingIfExists: Bool, terminal: Terminal) throws {
+        if deletingIfExists && FileManager.default.fileExists(atPath: path) {
+            let url = URL(fileURLWithPath: path)
+            try FileManager.default.removeItem(at: url)
+        }
         
-        self.queue =  try DatabaseQueue(path: path.absoluteString, configuration: config)
+        let config = Configuration()
+        self.queue =  try DatabaseQueue(path: path, configuration: config)
+        self.terminal = terminal
     }
     
     func migrateDatabase() throws {
@@ -37,6 +42,14 @@ class DatabaseManager {
                 t.column("minZ", .integer).notNull()
                 t.column("maxZ", .integer).notNull()
             }
+            
+            try db.create(table: "points") { t in
+                t.column("title", .text).notNull()
+                t.column("subtitle", .text)
+                t.column("latitude", .double).notNull()
+                t.column("longitude", .double).notNull()
+                t.column("clusterIdentifier", .text)
+            }
         }
         
         try migrator.migrate(queue)
@@ -53,7 +66,7 @@ class DatabaseManager {
         return count ?? 0
     }
     
-    func tileWithoutData() throws -> [Tile] {
+    func tilesWithoutData() throws -> [Tile] {
         var locations: [Tile] = []
         
         try queue.read { db in
@@ -66,6 +79,7 @@ class DatabaseManager {
     }
     
     func insertLocations(_ tiles: [Tile]) throws {
+        terminal.output("Inserting \(tiles.count) locations into database...".consoleText())
         try queue.write { db in
             try tiles.forEach { try $0.insert(db) }
         }
@@ -77,9 +91,18 @@ class DatabaseManager {
         }
     }
     
+    func persist(points: [Point]) throws {
+        terminal.output("Saving \(points.count) points to database...".consoleText())
+        try queue.write { db in
+            try points.forEach { try $0.insert(db) }
+        }
+    }
+    
     func vacuumDataase() throws {
+        terminal.output("Vacuuming Database...")
         try queue.writeWithoutTransaction { db in
             try db.execute("VACUUM")
         }
+        terminal.output("Vacuum Complete".consoleText(color: .green))
     }
 }

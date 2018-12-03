@@ -10,19 +10,25 @@ import SWXMLHash
 import CoreLocation
 
 struct XMLManager {
-    let data: Data
+    let document: XMLIndexer
+    
+    init(kmlPath: String) throws {
+        let url = URL(fileURLWithPath: kmlPath)
+        let data = try Data(contentsOf: url)
+        let xml = SWXMLHash.parse(data)
+        self.document = xml["kml"]["Document"]
+    }
     
     func getRegions(min: Int, max: Int) throws -> [TileRegion] {
-        let xml = SWXMLHash.parse(data)
-        let placemarks = xml["kml"]["Document"]["Folder"]["Placemark"].all
+        let placemarks = document["Folder"]["Placemark"].all
         
         var regions = [TileRegion]()
         for placemark in placemarks {
             let coordinatesString = placemark["Polygon"]["outerBoundaryIs"]["LinearRing"]["coordinates"].element!.text
             let components = coordinatesString.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: " ")
-            let coordinates = components.map { Coordinate($0) }
-            let lats = coordinates.map { $0.lat }
-            let lons = coordinates.map { $0.lon }
+            let coordinates = components.map { CLLocationCoordinate2D($0) }
+            let lats = coordinates.map { $0.latitude }
+            let lons = coordinates.map { $0.longitude }
 
             let tl = CLLocationCoordinate2D(latitude: lats.max()!, longitude: lons.min()!)
             let br = CLLocationCoordinate2D(latitude: lats.min()!, longitude: lons.max()!)
@@ -31,18 +37,5 @@ struct XMLManager {
         }
         
         return regions
-    }
-    
-    struct Coordinate {
-        let lat: Double
-        let lon: Double
-        let alt: Double
-        
-        init(_ string: String) {
-            let components = string.components(separatedBy: ",")
-            self.lat = Double(components[1])!
-            self.lon = Double(components[0])!
-            self.alt = Double(components[2])!
-        }
     }
 }
