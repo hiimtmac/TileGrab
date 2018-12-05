@@ -78,7 +78,7 @@ OPTIONS:
 
 ## Fill
 
-Sometimes tiles downloads will fail (google has a rate limiter for requests I think...?). Anyways, if this happens, running the `fill` command will find all the tile rows with `NULL` data column and fetch that tile data.
+Sometimes tiles downloads will fail. If this happens, running the `fill` command will find all the tile rows with `NULL` data column and fetch that tile data.
 
 ```shell
 hiimtmac$ .build/debug/TileGrab fill --help
@@ -101,7 +101,7 @@ Info about the map will go here. Stuff such as:
 
 ## KML
 
-The `kml` command will parse `Placemark`'s from google kml files.
+The `kml` command will parse `Placemark`'s from kml files.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
