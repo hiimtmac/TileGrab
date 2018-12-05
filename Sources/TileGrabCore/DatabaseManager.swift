@@ -42,14 +42,6 @@ class DatabaseManager {
                 t.column("minZ", .integer).notNull()
                 t.column("maxZ", .integer).notNull()
             }
-            
-            try db.create(table: "points") { t in
-                t.column("title", .text).notNull()
-                t.column("subtitle", .text)
-                t.column("latitude", .double).notNull()
-                t.column("longitude", .double).notNull()
-                t.column("clusterIdentifier", .text)
-            }
         }
         
         try migrator.migrate(queue)
@@ -59,33 +51,33 @@ class DatabaseManager {
         var count: Int?
         
         try queue.read { db in
-            count = try Tile
+            count = try DBTile
                 .fetchCount(db)
         }
         
         return count ?? 0
     }
     
-    func tilesWithoutData() throws -> [Tile] {
-        var locations: [Tile] = []
+    func tilesWithoutData() throws -> [DBTile] {
+        var locations: [DBTile] = []
         
         try queue.read { db in
-            locations = try Tile
-                .filter(Tile.Columns.data == nil)
+            locations = try DBTile
+                .filter(DBTile.Columns.data == nil)
                 .fetchAll(db)
         }
         
         return locations
     }
     
-    func insertLocations(_ tiles: [Tile]) throws {
+    func insertLocations(_ tiles: [DBTile]) throws {
         terminal.output("Inserting \(tiles.count) locations into database...".consoleText())
         try queue.write { db in
             try tiles.forEach { try $0.insert(db) }
         }
     }
     
-    func persist(tile: Tile) throws {
+    func persist(tile: DBTile) throws {
         try queue.write { db in
             try tile.save(db)
         }

@@ -1,5 +1,5 @@
 //
-//  Tile.swift
+//  DBTile.swift
 //  Async
 //
 //  Created by Taylor McIntyre on 2018-11-30.
@@ -34,7 +34,7 @@ struct TileRegion {
         self.maxZ = max
     }
     
-    func tiles() -> Set<Tile> {
+    func tiles() -> Set<DBTile> {
         let y1 = getYTile(location: tl, at: minZ)
         let x1 = getXTile(location: tl, at: minZ)
 
@@ -50,10 +50,10 @@ struct TileRegion {
         let xrange = minX...maxX
         let yrange = minY...maxY
         
-        var locations = [Tile]()
+        var locations = [DBTile]()
         for x in xrange {
             for y in yrange {
-                locations.append(Tile(x: x, y: y, z: minZ))
+                locations.append(DBTile(x: x, y: y, z: minZ))
             }
         }
         

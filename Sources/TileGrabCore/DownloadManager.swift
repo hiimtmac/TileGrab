@@ -18,7 +18,7 @@ class DownloadManager {
         self.terminal = terminal
     }
     
-    func fetchMap(tiles: [Tile], group: DispatchGroup) {
+    func fetchMap(tiles: [DBTile], group: DispatchGroup) {
         let tileCount = tiles.count
         terminal.output("Fetching \(tileCount) tiles...".consoleText())
         

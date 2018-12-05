@@ -26,10 +26,10 @@ extension CLLocationCoordinate2D {
         self.init(latitude: lat, longitude: long)
     }
     
-    func tileLocation(for zoom: Int) -> Tile {
+    func tileLocation(for zoom: Int) -> DBTile {
         let x = getXTile(location: self, at: zoom)
         let y = getXTile(location: self, at: zoom)
-        return Tile(x: x, y: y, z: zoom)
+        return DBTile(x: x, y: y, z: zoom)
     }
     
     enum Error: Swift.Error {

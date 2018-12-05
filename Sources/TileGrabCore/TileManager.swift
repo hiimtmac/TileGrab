@@ -16,8 +16,8 @@ class TileManager {
         self.regions = regions
     }
     
-    func getTileLocations() -> [Tile] {
-        let tiles = regions.reduce(Set<Tile>()) { tiles, region -> Set<Tile> in
+    func getTileLocations() -> [DBTile] {
+        let tiles = regions.reduce(Set<DBTile>()) { tiles, region -> Set<DBTile> in
             let regionTiles = region.tiles()
             return tiles.union(regionTiles)
         }
