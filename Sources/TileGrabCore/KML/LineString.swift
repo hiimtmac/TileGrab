@@ -10,8 +10,8 @@ import SWXMLHash
 import CoreLocation
 
 struct KMLLineString: XMLIndexerDeserializable {
-//    let tessellate: Int?
-//    let coordinates: [CLLocationCoordinate2D]
+    let tessellate: Int?
+    let coordinates: [CLLocationCoordinate2D]
     
     static func deserialize(_ element: XMLIndexer) throws -> KMLLineString {
         let coordinatesString: String = try element["coordinates"].value()
@@ -19,8 +19,8 @@ struct KMLLineString: XMLIndexerDeserializable {
         let coordinates = coordinatesArray.map { CLLocationCoordinate2D($0) }
         
         return try KMLLineString.init(
-//            tessellate: element["tessellate"].value(),
-//            coordinates: coordinates
+            tessellate: element["tessellate"].value(),
+            coordinates: coordinates
         )
     }
 }

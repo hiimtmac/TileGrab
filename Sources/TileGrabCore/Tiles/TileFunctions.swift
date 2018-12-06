@@ -8,50 +8,54 @@
 import Foundation
 import CoreLocation
 
-extension CLLocationCoordinate2D {
-    init(input: String) throws {
-        let components = input.components(separatedBy: ",")
-        guard components.count == 2 else {
-            throw Error.invalidComponents
-        }
-        
-        guard let lat = Double(components[0]) else {
-            throw Error.invalidLatitude
-        }
-        
-        guard let long = Double(components[1]) else {
-            throw Error.invalidLongitude
-        }
-        
-        self.init(latitude: lat, longitude: long)
-    }
-    
-    func tileLocation(for zoom: Int) -> DBTile {
-        let x = getXTile(location: self, at: zoom)
-        let y = getXTile(location: self, at: zoom)
-        return DBTile(x: x, y: y, z: zoom)
-    }
-    
-    enum Error: Swift.Error {
-        case invalidComponents
-        case invalidLatitude
-        case invalidLongitude
-    }
-}
-
 func getXTile(location: CLLocationCoordinate2D, at zoom: Int) -> Int {
-    let arg: Double = (location.longitude + 180)/360
-    let powx: Double = pow(Double(2),Double(zoom))
-    return Int(floor(arg * powx))
+    let z = Double(zoom)
+    let x = location.longitude
+    let loc = ((x + 180) / 360) * pow(2.0, z)
+    return Int(floor(loc))
 }
 
 func getYTile(location: CLLocationCoordinate2D, at zoom: Int) -> Int {
-    let tanx = tan(location.latitude * (Double.pi / 180))
-    let cosx = 1 / cos(location.latitude * (Double.pi / 180))
+    let π = Double.pi
+    let z = Double(zoom - 1)
+    let y = location.latitude
+
+    let tanx = tan(y * (π / 180))
+    let cosx = 1 / cos(y * (π / 180))
     let lnx = log(tanx + cosx)
-    let pix = lnx / Double.pi
-    let powx = pow(Double(2),Double(zoom - 1))
-    return Int(floor((1 - pix) * powx))
+    let pix = lnx / π
+
+    let loc = (1 - pix) * pow(2.0, z)
+    return Int(floor(loc))
+}
+
+func getCoordinate(x: Int, y: Int, zoom: Int) -> CLLocationCoordinate2D {
+    let π = Double.pi
+    let x = Double(x)
+    let y = Double(y)
+    let z = Double(zoom)
+    
+    let lon = ((x / (pow(2.0, z))) * 360) - 180
+    let lat = (180.0 / π) * atan(sinh(π * (1 - (2.0 * y / pow(2.0, z)))))
+    return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+}
+
+func getCoordinate(distance: CLLocationDistance, from: CLLocationCoordinate2D, deg: Double) -> CLLocationCoordinate2D {
+    let π = Double.pi
+    let r = 6371.0
+    let d = distance / 1000.0
+    
+    let latRad1 = from.latitude * π / 180.0
+    let lonRad1 = from.longitude * π / 180.0
+    let b = deg * π / 180.0
+    
+    let latRad2 = asin(sin(latRad1) * cos(d / r) + cos(latRad1) * sin(d / r) * cos(b))
+    let lonRad2 = lonRad1 + atan2(sin(b) * sin(d / r) * cos(latRad1), cos(d / r) - sin(latRad1) * sin(latRad2))
+    
+    let latDeg = latRad2 * 180 / π
+    let lonDeg = lonRad2 * 180 / π
+    
+    return CLLocationCoordinate2D(latitude: latDeg, longitude: lonDeg)
 }
 
 func sizeForCount(tileCount: Int) -> String {

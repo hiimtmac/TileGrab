@@ -6,35 +6,13 @@
 //
 
 import Foundation
-import GRDB
 import CoreLocation
 
 struct TileRegion {
     let tl: CLLocationCoordinate2D
     let br: CLLocationCoordinate2D
-    let minZ: Int
-    let maxZ: Int
     
-    init(tl: CLLocationCoordinate2D, br: CLLocationCoordinate2D, min: Int, max: Int) throws {
-        guard tl.longitude < br.longitude else {
-            throw Error.coordinateError("Longitude of top left must be smaller than bottom right")
-        }
-        
-        guard tl.latitude > br.latitude else {
-            throw Error.coordinateError("Latitude of top left must be larger than bottom right")
-        }
-        
-        guard min < max else {
-            throw Error.zoomError
-        }
-        
-        self.tl = tl
-        self.br = br
-        self.minZ = min
-        self.maxZ = max
-    }
-    
-    func tiles() -> Set<DBTile> {
+    func tiles(minZ: Int, maxZ: Int) -> Set<DBTile> {
         let y1 = getYTile(location: tl, at: minZ)
         let x1 = getXTile(location: tl, at: minZ)
 
@@ -50,15 +28,14 @@ struct TileRegion {
         let xrange = minX...maxX
         let yrange = minY...maxY
         
-        var locations = [DBTile]()
+        var locations = Set<DBTile>()
         for x in xrange {
             for y in yrange {
-                locations.append(DBTile(x: x, y: y, z: minZ))
+                locations.insert(DBTile(x: x, y: y, z: minZ))
             }
         }
         
-        let tiles = locations.reduce(locations, { $0 + $1.children(max: maxZ) })
-        return Set(tiles)
+        return locations.reduce(locations, { $0.union($1.children(max: maxZ)) })
     }
     
     var squareKM: Double {
@@ -71,10 +48,5 @@ struct TileRegion {
         let lon = lonFrom.distance(from: lonTo) / 1000
         
         return round(lat * lon)
-    }
-    
-    enum Error: Swift.Error {
-        case coordinateError(String)
-        case zoomError
     }
 }

@@ -43,8 +43,9 @@ struct FillCommand: Command {
         }
         
         let downloadManager = DownloadManager(databaseManager: dataManager, terminal: terminal)
+        
         let group = DispatchGroup()
-        downloadManager.fetchMap(tiles: tilesToFetch, group: group)
+        downloadManager.fetchMap(tiles: tilesToFetch, group: group, provider: GoogleProvider())
         group.wait()
         
         terminal.output("Download Complete".consoleText(color: .green))

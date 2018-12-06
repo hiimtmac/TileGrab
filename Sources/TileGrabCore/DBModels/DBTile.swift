@@ -7,6 +7,7 @@
 
 import Foundation
 import GRDB
+import CoreLocation
 
 final class DBTile {
     let x: Int
@@ -21,23 +22,8 @@ final class DBTile {
         self.data = data
     }
     
-    enum Columns: String, ColumnExpression {
-        case x
-        case y
-        case z
-        case data
-    }
-    
     var slug: String {
-        return "x=\(x)&y=\(y)&z=\(z)"
-    }
-    
-    var url: URL {
-        return URL(string: "https://mt.google.com/vt/lyrs=s&\(slug)")!
-    }
-    
-    var display: String {
-        return "x=\(x) y=\(y) z=\(z)"
+        return "\(x)/\(y)/\(z)"
     }
     
     func children(max: Int) -> [DBTile] {
@@ -53,6 +39,57 @@ final class DBTile {
         let children = [x1y1, x1y2, x2y1, x2y2]
         return children.reduce(children, { $0 + $1.children(max: max) })
     }
+    
+    var parentTile: DBTile {
+        let pX = Int(floor(Double(x) / 2.0))
+        let pY = Int(floor(Double(y) / 2.0))
+        return DBTile(x: pX, y: pY, z: z - 1)
+    }
+    
+    var childTiles: [DBTile] {
+        let x1y1 = DBTile(x: x * 2, y: y * 2, z: z + 1)
+        let x1y2 = DBTile(x: x * 2, y: y * 2 + 1, z: z + 1)
+        let x2y1 = DBTile(x: x * 2 + 1, y: y * 2, z: z + 1)
+        let x2y2 = DBTile(x: x * 2 + 1, y: y * 2 + 1, z: z + 1)
+        
+        return [x1y1, x1y2, x2y1, x2y2]
+    }
+    
+    var topLeft: CLLocationCoordinate2D {
+        return getCoordinate(x: x, y: y, zoom: z)
+    }
+    
+    var bottomRight: CLLocationCoordinate2D {
+        return getCoordinate(x: x + 1, y: y + 1, zoom: z)
+    }
+    
+    /// straight distance to left side of tile
+    func leftBuffer(for point: CLLocationCoordinate2D) -> CLLocationDistance {
+        let me = CLLocation(latitude: point.latitude, longitude: point.longitude)
+        let l = CLLocation(latitude: point.latitude, longitude: topLeft.longitude)
+        return me.distance(from: l)
+    }
+    
+    /// straight distance to right side of tile
+    func rightBuffer(for point: CLLocationCoordinate2D) -> CLLocationDistance {
+        let me = CLLocation(latitude: point.latitude, longitude: point.longitude)
+        let r = CLLocation(latitude: point.latitude, longitude: bottomRight.longitude)
+        return me.distance(from: r)
+    }
+    
+    /// straight distance to top side of tile
+    func topBuffer(for point: CLLocationCoordinate2D) -> CLLocationDistance {
+        let me = CLLocation(latitude: point.latitude, longitude: point.longitude)
+        let t = CLLocation(latitude: topLeft.latitude, longitude: point.longitude)
+        return me.distance(from: t)
+    }
+    
+    /// straight distance to bottom side of tile
+    func bottomBuffer(for point: CLLocationCoordinate2D) -> CLLocationDistance {
+        let me = CLLocation(latitude: point.latitude, longitude: point.longitude)
+        let b = CLLocation(latitude: bottomRight.latitude, longitude: point.longitude)
+        return me.distance(from: b)
+    }
 }
 
 extension DBTile: Equatable {
@@ -64,6 +101,16 @@ extension DBTile: Equatable {
 extension DBTile: Hashable {
     var hashValue: Int {
         return slug.hashValue
+    }
+}
+
+// MARK: - Database
+extension DBTile {
+    enum Columns: String, ColumnExpression {
+        case x
+        case y
+        case z
+        case data
     }
 }
 

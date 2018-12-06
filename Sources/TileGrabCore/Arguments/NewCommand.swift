@@ -16,34 +16,52 @@ struct NewCommand: Command {
     
     let terminal: Terminal
     let kmlPathArg: OptionArgument<PathArgument>
-    let dbPathArg: OptionArgument<PathArgument>
+    let kmlTypeArg: OptionArgument<KMLType>
     let minZArg: OptionArgument<Int>
     let maxZArg: OptionArgument<Int>
     let skippingZoomsArg: OptionArgument<Bool>
     
+    enum KMLType: String, ArgumentKind {
+        public init(argument: String) throws {
+            guard let type = KMLType(rawValue: argument) else {
+                throw Error.unknownType
+            }
+            self = type
+        }
+        
+        public static let completion: ShellCompletion = .none
+        
+        case paths
+        case regions
+        
+        enum Error: Swift.Error, LocalizedError {
+            case unknownType
+            
+            var errorDescription: String? {
+                switch self {
+                case .unknownType: return "Unknown KML Type"
+                }
+            }
+        }
+    }
+    
     init(parser: ArgumentParser, terminal: Terminal) {
         let subparser = parser.add(subparser: command, overview: overview)
-        self.kmlPathArg = subparser.add(option: "--regions", shortName: "-r", kind: PathArgument.self, usage: "Path to kml file with regions", completion: .filename)
-        self.dbPathArg = subparser.add(option: "--database", shortName: "-d", kind: PathArgument.self, usage: "Path to database file output", completion: .filename)
-        self.minZArg = parser.add(option: "--max", kind: Int.self, usage: "Max Zoom")
-        self.maxZArg = parser.add(option: "--min", kind: Int.self, usage: "Min Zoom")
+        self.kmlPathArg = subparser.add(option: "--kml", shortName: "-k", kind: PathArgument.self, usage: "Path to kml file.", completion: .filename)
+        self.kmlTypeArg = subparser.add(option: "--type", shortName: "-t", kind: KMLType.self, usage: "Type [regions paths]")
+        self.minZArg = parser.add(option: "--min", kind: Int.self, usage: "Min Zoom")
+        self.maxZArg = parser.add(option: "--max", kind: Int.self, usage: "Max Zoom")
         self.skippingZoomsArg = parser.add(option: "--skipping", shortName: "-s", kind: Bool.self, usage: "Skips every second zoom level")
         self.terminal = terminal
     }
     
     func run(with arguments: ArgumentParser.Result) throws {
-        let kmlPath: PathArgument
-        if let regionsFile = arguments.get(kmlPathArg) {
-            kmlPath = regionsFile
-        } else {
-            kmlPath = try PathArgument(argument: terminal.ask("Path for regions file? (kml)"))
+        guard let kmlType = arguments.get(kmlTypeArg) else {
+            throw ArgumentParserError.expectedValue(option: "No/unexpected kml type")
         }
         
-        let dbPath: PathArgument
-        if let dataFile = arguments.get(dbPathArg) {
-            dbPath = dataFile
-        } else {
-            dbPath = try PathArgument(argument: terminal.ask("Path for database file? (sqlite)"))
+        guard let kmlPath = arguments.get(kmlPathArg) else {
+            throw ArgumentParserError.expectedValue(option: "Bad path")
         }
         
         let minZ: Int
@@ -62,11 +80,41 @@ struct NewCommand: Command {
         
         let skippingZoom = arguments.get(skippingZoomsArg) ?? false
         
-        let xmlManager = try XMLManager(kmlPath: kmlPath.path.asString)
-        let regions = try xmlManager.getRegions(min: minZ, max: maxZ)
-        let tileManager = TileManager(regions: regions)
-        
-        var tiles = tileManager.getTileLocations()
+        var tiles = [DBTile]()
+        let kmlManager = try KMLManager(kmlPath: kmlPath.path.asString)
+        let tileManager = TileManager()
+
+        switch kmlType {
+        case .regions:
+            let regions = try kmlManager.getRegions()
+            tiles = tileManager.calculateTileLocations(for: regions, minZ: minZ, maxZ: maxZ)
+            
+            let summary: ConsoleText =
+                "\(regions.count)".consoleText(color: .blue) +
+                    " region(s) covering ~" +
+                    "\(regions.reduce(0, { $0 + $1.squareKM }))".consoleText(color: .blue) +
+                    " square km - Min/Max Zoom: " +
+                    "\(minZ)".consoleText(color: .blue) +
+                    " / " +
+                    "\(maxZ)".consoleText(color: .blue) +
+                    "\(skippingZoom ? " skipping every second layer": "")".consoleText()
+            
+            terminal.output(summary)
+        case .paths:
+            let buffer = 100.0
+            let paths = try kmlManager.getPaths(buffer: buffer)
+            tiles = tileManager.calculateTileLocations(along: paths, minZ: minZ, maxZ: maxZ, buffer: buffer)
+            
+            let summary: ConsoleText =
+                "\(paths.count)".consoleText(color: .blue) +
+                    " path(s) - Min/Max Zoom: " +
+                    "\(minZ)".consoleText(color: .blue) +
+                    " / " +
+                    "\(maxZ)".consoleText(color: .blue) +
+                    "\(skippingZoom ? " skipping every second layer": "")".consoleText()
+            
+            terminal.output(summary)
+        }
         
         if skippingZoom {
             let zooms = Array(minZ...maxZ)
@@ -74,36 +122,22 @@ struct NewCommand: Command {
             tiles = tiles.filter { filteredZooms.contains($0.z) }
         }
         
-        let dataManager = try DatabaseManager(path: dbPath.path.asString, deletingIfExists: true, terminal: terminal)
-        try dataManager.migrateDatabase()
-        try dataManager.insertLocations(tiles)
-        
-        let summary: ConsoleText =
-            "\(regions.count)".consoleText(color: .blue) +
-                " region(s) covering ~" +
-                "\(regions.reduce(0, { $0 + $1.squareKM }))".consoleText(color: .blue) +
-                " square km - Min/Max Zoom: " +
-                "\(minZ)".consoleText(color: .blue) +
-                " / " +
-                "\(maxZ)".consoleText(color: .blue) +
-                "\(skippingZoom ? " skipping every second layer": "")".consoleText()
-        
-        terminal.output(summary)
-        
-        let tilesToFetch = try dataManager.tilesWithoutData()
-        let sizeString = sizeForCount(tileCount: tilesToFetch.count)
-        
-        if !terminal.confirm("Download will grab \(sizeString) to \(dbPath.path.asString). Continue?".consoleText()) {
+        let sizeString = sizeForCount(tileCount: tiles.count)
+        let dbPath = "\(kmlPath.path.dirname)/\(kmlPath.path.basename.components(separatedBy: ".")[0]).sqlite"
+
+        if !terminal.confirm("Download will grab \(sizeString) to \(dbPath). Continue?".consoleText()) {
             terminal.output("Oh well, maybe another time.")
-            let url = URL(fileURLWithPath: dbPath.path.asString)
-            try? FileManager.default.removeItem(at: url)
             return
         }
+        
+        let dataManager = try DatabaseManager(path: dbPath, deletingIfExists: true, terminal: terminal)
+        try dataManager.migrateDatabase()
+        try dataManager.insertLocations(tiles)
         
         let downloadManager = DownloadManager(databaseManager: dataManager, terminal: terminal)
         
         let group = DispatchGroup()
-        downloadManager.fetchMap(tiles: tilesToFetch, group: group)
+        downloadManager.fetchMap(tiles: tiles, group: group, provider: GoogleProvider())
         group.wait()
         
         terminal.output("Download Complete".consoleText(color: .green))
