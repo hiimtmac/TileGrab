@@ -15,40 +15,18 @@ struct NewCommand: Command {
     let overview = "Create new sqlite file from kml polygons & downloads"
     
     let terminal: Terminal
-    let kmlPathArg: OptionArgument<PathArgument>
+    let kmlFileArg: OptionArgument<PathArgument>
     let kmlTypeArg: OptionArgument<KMLType>
+    let kmlBufferArg: OptionArgument<Double>
     let minZArg: OptionArgument<Int>
     let maxZArg: OptionArgument<Int>
     let skippingZoomsArg: OptionArgument<Bool>
     
-    enum KMLType: String, ArgumentKind {
-        public init(argument: String) throws {
-            guard let type = KMLType(rawValue: argument) else {
-                throw Error.unknownType
-            }
-            self = type
-        }
-        
-        public static let completion: ShellCompletion = .none
-        
-        case paths
-        case regions
-        
-        enum Error: Swift.Error, LocalizedError {
-            case unknownType
-            
-            var errorDescription: String? {
-                switch self {
-                case .unknownType: return "Unknown KML Type"
-                }
-            }
-        }
-    }
-    
     init(parser: ArgumentParser, terminal: Terminal) {
         let subparser = parser.add(subparser: command, overview: overview)
-        self.kmlPathArg = subparser.add(option: "--kml", shortName: "-k", kind: PathArgument.self, usage: "Path to kml file.", completion: .filename)
+        self.kmlFileArg = subparser.add(option: "--kml", shortName: "-k", kind: PathArgument.self, usage: "Path to kml file.", completion: .filename)
         self.kmlTypeArg = subparser.add(option: "--type", shortName: "-t", kind: KMLType.self, usage: "Type [regions paths]")
+        self.kmlBufferArg = subparser.add(option: "--buffer", shortName: "-b", kind: Double.self, usage: "Buffer in meters around paths")
         self.minZArg = parser.add(option: "--min", kind: Int.self, usage: "Min Zoom")
         self.maxZArg = parser.add(option: "--max", kind: Int.self, usage: "Max Zoom")
         self.skippingZoomsArg = parser.add(option: "--skipping", shortName: "-s", kind: Bool.self, usage: "Skips every second zoom level")
@@ -60,7 +38,7 @@ struct NewCommand: Command {
             throw ArgumentParserError.expectedValue(option: "No/unexpected kml type")
         }
         
-        guard let kmlPath = arguments.get(kmlPathArg) else {
+        guard let kmlPath = arguments.get(kmlFileArg) else {
             throw ArgumentParserError.expectedValue(option: "Bad path")
         }
         
@@ -101,7 +79,10 @@ struct NewCommand: Command {
             
             terminal.output(summary)
         case .paths:
-            let buffer = 100.0
+            guard let buffer = arguments.get(kmlBufferArg) else {
+                throw ArgumentParserError.expectedValue(option: "Missing buffer")
+            }
+            
             let paths = try kmlManager.getPaths(buffer: buffer)
             tiles = tileManager.calculateTileLocations(along: paths, minZ: minZ, maxZ: maxZ, buffer: buffer)
             
@@ -143,5 +124,50 @@ struct NewCommand: Command {
         terminal.output("Download Complete".consoleText(color: .green))
         
         try dataManager.vacuumDataase()
+    }
+}
+
+enum KMLType: String, ArgumentKind {
+    public init(argument: String) throws {
+        guard let type = KMLType(rawValue: argument) else {
+            throw Error.unknownType
+        }
+        self = type
+    }
+    
+    public static let completion: ShellCompletion = .none
+    
+    case paths
+    case regions
+    
+    enum Error: Swift.Error, LocalizedError {
+        case unknownType
+        
+        var errorDescription: String? {
+            switch self {
+            case .unknownType: return "Unknown KML Type"
+            }
+        }
+    }
+}
+
+extension Double: ArgumentKind {
+    public init(argument: String) throws {
+        guard let double = Double(argument) else {
+            throw Error.nonNumeric
+        }
+        self = double
+    }
+    
+    public static let completion: ShellCompletion = .none
+    
+    enum Error: Swift.Error, LocalizedError {
+        case nonNumeric
+        
+        var errorDescription: String? {
+            switch self {
+            case .nonNumeric: return "Non-numeric buffer"
+            }
+        }
     }
 }

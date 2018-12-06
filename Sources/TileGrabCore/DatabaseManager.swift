@@ -36,9 +36,11 @@ class DatabaseManager {
             }
             
             try db.create(table: "info") { t in
-                t.primaryKey((["initialTL","initialBR","minZ","maxZ"]), onConflict: .replace)
-                t.column("initialTL", .text).notNull()
-                t.column("initialBR", .text).notNull()
+                t.primaryKey((["tlLat","tlLon","brLat","brLon","minZ","maxZ"]), onConflict: .replace)
+                t.column("tlLat", .text).notNull()
+                t.column("tlLon", .text).notNull()
+                t.column("brLat", .text).notNull()
+                t.column("brLon", .text).notNull()
                 t.column("minZ", .integer).notNull()
                 t.column("maxZ", .integer).notNull()
             }
@@ -80,6 +82,23 @@ class DatabaseManager {
     func persist(tile: DBTile) throws {
         try queue.write { db in
             try tile.save(db)
+        }
+    }
+    
+    func setInfo() throws {
+        try queue.write { db in
+            let maxZ = try Int.fetchOne(db, "SELECT max(z) FROM tiles")!
+            let minZ = try Int.fetchOne(db, "SELECT min(z) FROM tiles")!
+            let maxX = try Int.fetchOne(db, "SELECT max(x) FROM tiles")!
+            let minX = try Int.fetchOne(db, "SELECT min(x) FROM tiles")!
+            let maxY = try Int.fetchOne(db, "SELECT max(y) FROM tiles")!
+            let minY = try Int.fetchOne(db, "SELECT min(y) FROM tiles")!
+            
+            let tl = getCoordinate(x: minX, y: maxY, zoom: minZ)
+            let br = getCoordinate(x: maxX, y: minY, zoom: minZ)
+            
+            let info = DBInfo(tl: tl, br: br, min: minZ, max: maxZ)
+            try info.insert(db)
         }
     }
     

@@ -29,13 +29,11 @@ struct KMLManager {
     }
     
     func getRegions() throws -> [TileRegion] {
-        let placemarks = document["Folder"]["Placemark"].all
+        let polygons: [KMLPolygonPlacemark] = try document["Folder"]["Placemark"].value()
         
         var regions = [TileRegion]()
-        for placemark in placemarks {
-            let coordinatesString = placemark["Polygon"]["outerBoundaryIs"]["LinearRing"]["coordinates"].element!.text
-            let components = coordinatesString.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: " ")
-            let coordinates = components.map { CLLocationCoordinate2D($0) }
+        for polygon in polygons {
+            let coordinates = polygon.polygon.outerBoundaryIs.linearRing.coordinates
             let lats = coordinates.map { $0.latitude }
             let lons = coordinates.map { $0.longitude }
             
