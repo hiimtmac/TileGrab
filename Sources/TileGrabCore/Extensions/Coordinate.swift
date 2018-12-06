@@ -10,7 +10,7 @@ import CoreLocation
 
 extension CLLocationCoordinate2D {
     init(_ kmlCoordinates: String) {
-        let components = kmlCoordinates.components(separatedBy: ",")
+        let components = kmlCoordinates.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: ",")
         let latitude = Double(components[1])!
         let longitude = Double(components[0])!
         self.init(latitude: latitude, longitude: longitude)

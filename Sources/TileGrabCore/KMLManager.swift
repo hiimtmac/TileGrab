@@ -19,7 +19,12 @@ struct KMLManager {
         self.document = xml["kml"]["Document"]
     }
     
-    func getPlacemarks() throws -> [Placemark] {
-        return try document["Placemark"].value()
+    func makeDocument() {
+        do {
+            let doc: KMLDocument = try document.value()
+            print(doc)
+        } catch {
+            print(error)
+        }
     }
 }

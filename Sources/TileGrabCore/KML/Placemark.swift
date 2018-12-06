@@ -8,22 +8,22 @@
 import Foundation
 import SWXMLHash
 
-class KMLPlacemark: XMLIndexerDeserializable {
-    let name: String
+class KMLPlacemark {
+    let name: String?
     let description: String?
     let styleUrl: String?
     
-    init(name: String, description: String?, styleUrl: String?) {
+    init(name: String?, description: String?, styleUrl: String?) {
         self.name = name
         self.description = description
         self.styleUrl = styleUrl
     }
 }
 
-final class KMLLineStringPlacemark: KMLPlacemark {
+final class KMLLineStringPlacemark: KMLPlacemark, XMLIndexerDeserializable {
     let lineString: KMLLineString
     
-    init(name: String, description: String?, styleUrl: String?, lineString: KMLLineString) {
+    init(name: String?, description: String?, styleUrl: String?, lineString: KMLLineString) {
         self.lineString = lineString
         super.init(name: name, description: description, styleUrl: styleUrl)
     }
@@ -38,10 +38,10 @@ final class KMLLineStringPlacemark: KMLPlacemark {
     }
 }
 
-class KMLMultiGeometryLineStringPlacemark: KMLPlacemark {
+final class KMLMultiGeometryLineStringPlacemark: KMLPlacemark, XMLIndexerDeserializable {
     let multiGeometryLineString: KMLMultiGeometryLineString
     
-    init(name: String, description: String?, styleUrl: String?, multiGeometryLineString: KMLMultiGeometryLineString) {
+    init(name: String?, description: String?, styleUrl: String?, multiGeometryLineString: KMLMultiGeometryLineString) {
         self.multiGeometryLineString = multiGeometryLineString
         super.init(name: name, description: description, styleUrl: styleUrl)
     }
@@ -56,28 +56,10 @@ class KMLMultiGeometryLineStringPlacemark: KMLPlacemark {
     }
 }
 
-class KMLMultiGeometryPolygonPlacemark: KMLPlacemark {
-    let multiGeometryPolygon: KMLMultiGeometryPolygon
-    
-    init(name: String, description: String?, styleUrl: String?, multiGeometryPolygon: KMLMultiGeometryPolygon) {
-        self.multiGeometryPolygon = multiGeometryPolygon
-        super.init(name: name, description: description, styleUrl: styleUrl)
-    }
-    
-    static func deserialize(_ element: XMLIndexer) throws -> KMLMultiGeometryPolygonPlacemark {
-        return try KMLMultiGeometryPolygonPlacemark.init(
-            name: element["name"].value(),
-            description: element["description"].value(),
-            styleUrl: element["styleUrl"].value(),
-            multiGeometryPolygon: element["MultiGeometry"].value()
-        )
-    }
-}
-
-class KMLPolygonPlacemark: KMLPlacemark {
+final class KMLPolygonPlacemark: KMLPlacemark, XMLIndexerDeserializable {
     let polygon: KMLPolygon
     
-    init(name: String, description: String?, styleUrl: String?, polygon: KMLPolygon) {
+    init(name: String?, description: String?, styleUrl: String?, polygon: KMLPolygon) {
         self.polygon = polygon
         super.init(name: name, description: description, styleUrl: styleUrl)
     }
@@ -92,10 +74,28 @@ class KMLPolygonPlacemark: KMLPlacemark {
     }
 }
 
-class KMLPointPlacemark: KMLPlacemark {
-    let point: KMLPoint
+final class KMLMultiGeometryPolygonPlacemark: KMLPlacemark, XMLIndexerDeserializable {
+    let multiGeometryPolygon: KMLMultiGeometryPolygon
     
-    init(name: String, description: String?, styleUrl: String?, point: KMLPoint) {
+    init(name: String?, description: String?, styleUrl: String?, multiGeometryPolygon: KMLMultiGeometryPolygon) {
+        self.multiGeometryPolygon = multiGeometryPolygon
+        super.init(name: name, description: description, styleUrl: styleUrl)
+    }
+    
+    static func deserialize(_ element: XMLIndexer) throws -> KMLMultiGeometryPolygonPlacemark {
+        return try KMLMultiGeometryPolygonPlacemark.init(
+            name: element["name"].value(),
+            description: element["description"].value(),
+            styleUrl: element["styleUrl"].value(),
+            multiGeometryPolygon: element["MultiGeometry"].value()
+        )
+    }
+}
+
+final class KMLPointPlacemark: KMLPlacemark, XMLIndexerDeserializable {
+    let point: KMLPoint
+
+    init(name: String?, description: String?, styleUrl: String?, point: KMLPoint) {
         self.point = point
         super.init(name: name, description: description, styleUrl: styleUrl)
     }

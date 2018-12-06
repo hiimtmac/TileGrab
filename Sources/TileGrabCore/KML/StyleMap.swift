@@ -25,7 +25,7 @@ struct KMLPair: XMLIndexerDeserializable {
     static func deserialize(_ element: XMLIndexer) throws -> KMLPair {
         return try KMLPair.init(
             key: element["key"].value(),
-            styleUrl: element["value"].value()
+            styleUrl: element["styleUrl"].value()
         )
     }
 }

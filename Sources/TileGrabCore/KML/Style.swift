@@ -73,18 +73,20 @@ struct LineStyle: XMLIndexerDeserializable {
 }
 
 struct ListStyle: XMLIndexerDeserializable {
-    let itemIcon: ItemIcon
+    let itemIcon: ItemIcon?
+    let listItemType: String?
     
     static func deserialize(_ element: XMLIndexer) throws -> ListStyle {
         return try ListStyle.init(
-            itemIcon: element["ListStyle"].value()
+            itemIcon: element["ItemIcon"].value(),
+            listItemType: element["listItemType"].value()
         )
     }
 }
 
 struct ItemIcon: XMLIndexerDeserializable {
     let href: String
-    
+
     static func deserialize(_ element: XMLIndexer) throws -> ItemIcon {
         return try ItemIcon.init(
             href: element["href"].value()

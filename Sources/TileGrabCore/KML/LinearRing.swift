@@ -14,7 +14,7 @@ struct KMLLinearRing: XMLIndexerDeserializable {
     
     static func deserialize(_ element: XMLIndexer) throws -> KMLLinearRing {
         let coordinatesString: String = try element["coordinates"].value()
-        let coordinatesArray = coordinatesString.components(separatedBy: " ")
+        let coordinatesArray = coordinatesString.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: " ")
         let coordinates = coordinatesArray.map { CLLocationCoordinate2D($0) }
         
         return KMLLinearRing.init(

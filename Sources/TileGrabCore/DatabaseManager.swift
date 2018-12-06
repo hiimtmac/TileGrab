@@ -83,13 +83,6 @@ class DatabaseManager {
         }
     }
     
-    func persist(points: [Point]) throws {
-        terminal.output("Saving \(points.count) points to database...".consoleText())
-        try queue.write { db in
-            try points.forEach { try $0.insert(db) }
-        }
-    }
-    
     func vacuumDataase() throws {
         terminal.output("Vacuuming Database...")
         try queue.writeWithoutTransaction { db in
