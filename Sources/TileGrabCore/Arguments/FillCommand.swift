@@ -35,6 +35,11 @@ struct FillCommand: Command {
         try dataManager.migrateDatabase()
 
         let tilesToFetch = try dataManager.tilesWithoutData()
+        if tilesToFetch.isEmpty {
+            terminal.output("No tiles to fetch.")
+            return
+        }
+        
         let sizeString = sizeForCount(tileCount: tilesToFetch.count)
         
         if !terminal.confirm("Download will grab \(sizeString) to \(dbPath.path.asString). Continue?".consoleText()) {
