@@ -28,15 +28,19 @@ struct KMLManager {
         }
     }
     
-    func getRegions() throws -> [TileRegion] {
-        let polygons: [KMLPolygonPlacemark] = try document["Folder"]["Placemark"].value()
+    func getRegions() throws -> [TileRegion]? {
+        let kml: [KMLPolygonPlacemark]? = try document["Folder"]["Placemark"]
+            .filterAll { e,_ in e.innerXML.contains("Polygon")}
+            .value()
+        
+        guard let polygons = kml, !polygons.isEmpty else { return nil }
         
         var regions = [TileRegion]()
         for polygon in polygons {
             let coordinates = polygon.polygon.outerBoundaryIs.linearRing.coordinates
             let lats = coordinates.map { $0.latitude }
             let lons = coordinates.map { $0.longitude }
-            
+                        
             let tl = CLLocationCoordinate2D(latitude: lats.max()!, longitude: lons.min()!)
             let br = CLLocationCoordinate2D(latitude: lats.min()!, longitude: lons.max()!)
             let region = TileRegion(tl: tl, br: br)
@@ -46,8 +50,12 @@ struct KMLManager {
         return regions
     }
     
-    func getPaths(buffer: Double) throws -> [TilePath] {
-        let lineStrings: [KMLLineStringPlacemark] = try document["Folder"]["Placemark"].value()
+    func getPaths(buffer: Double) throws -> [TilePath]? {
+        let kml: [KMLLineStringPlacemark]? = try document["Folder"]["Placemark"]
+            .filterAll { e,_ in e.innerXML.contains("LineString")}
+            .value()
+        
+        guard let lineStrings = kml, !lineStrings.isEmpty else { return nil }
         
         var paths = [TilePath]()
         for line in lineStrings {

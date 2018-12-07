@@ -16,92 +16,94 @@ struct NewCommand: Command {
     
     let terminal: Terminal
     let kmlFileArg: OptionArgument<PathArgument>
-    let kmlTypeArg: OptionArgument<KMLType>
-    let kmlBufferArg: OptionArgument<Double>
-    let minZArg: OptionArgument<Int>
-    let maxZArg: OptionArgument<Int>
-    let skippingZoomsArg: OptionArgument<Bool>
     
     init(parser: ArgumentParser, terminal: Terminal) {
         let subparser = parser.add(subparser: command, overview: overview)
-        self.kmlFileArg = subparser.add(option: "--kml", shortName: "-k", kind: PathArgument.self, usage: "Path to kml file.", completion: .filename)
-        self.kmlTypeArg = subparser.add(option: "--type", shortName: "-t", kind: KMLType.self, usage: "Type [regions paths]")
-        self.kmlBufferArg = subparser.add(option: "--buffer", shortName: "-b", kind: Double.self, usage: "Buffer in meters around paths")
-        self.minZArg = parser.add(option: "--min", kind: Int.self, usage: "Min Zoom")
-        self.maxZArg = parser.add(option: "--max", kind: Int.self, usage: "Max Zoom")
-        self.skippingZoomsArg = parser.add(option: "--skipping", shortName: "-s", kind: Bool.self, usage: "Skips every second zoom level")
+        self.kmlFileArg = subparser.add(option: "--kml-file", shortName: "-k", kind: PathArgument.self, usage: "Path to kml file.", completion: .filename)
         self.terminal = terminal
     }
     
     func run(with arguments: ArgumentParser.Result) throws {
-        guard let kmlType = arguments.get(kmlTypeArg) else {
-            throw ArgumentParserError.expectedValue(option: "No/unexpected kml type")
-        }
-        
         guard let kmlPath = arguments.get(kmlFileArg) else {
             throw ArgumentParserError.expectedValue(option: "Bad path")
         }
         
-        let minZ: Int
-        if let min = arguments.get(minZArg) {
-            minZ = min
-        } else {
-            minZ = try Int(string: terminal.ask("Min Zoom"))
-        }
-        
-        let maxZ: Int
-        if let max = arguments.get(maxZArg) {
-            maxZ = max
-        } else {
-            maxZ = try Int(string: terminal.ask("Max Zoom"))
-        }
-        
-        let skippingZoom = arguments.get(skippingZoomsArg) ?? false
-        
-        var tiles = [DBTile]()
+        var tileSet = Set<DBTile>()
         let kmlManager = try KMLManager(kmlPath: kmlPath.path.asString)
         let tileManager = TileManager()
-
-        switch kmlType {
-        case .regions:
-            let regions = try kmlManager.getRegions()
-            tiles = tileManager.calculateTileLocations(for: regions, minZ: minZ, maxZ: maxZ)
+        
+        if let regions = try kmlManager.getRegions() {
+            terminal.output("\(regions.count)".consoleText(color: .magenta) + " regions found.\n".consoleText())
             
-            let summary: ConsoleText =
-                "\(regions.count)".consoleText(color: .blue) +
-                    " region(s) covering ~" +
-                    "\(regions.reduce(0, { $0 + $1.squareKM }))".consoleText(color: .blue) +
-                    " square km - Min/Max Zoom: " +
-                    "\(minZ)".consoleText(color: .blue) +
-                    " / " +
-                    "\(maxZ)".consoleText(color: .blue) +
-                    "\(skippingZoom ? " skipping every second layer": "")".consoleText()
+            let rMin = try Int(string: terminal.ask("Min zoom for regions?"))
+            let rMax = try Int(string: terminal.ask("Max zoom for regions?"))
             
-            terminal.output(summary)
-        case .paths:
-            guard let buffer = arguments.get(kmlBufferArg) else {
-                throw ArgumentParserError.expectedValue(option: "Missing buffer")
+            var regionTiles = tileManager.calculateTileLocations(for: regions, minZ: rMin, maxZ: rMax)
+            
+            var skipping = false
+            if terminal.confirm("Skip every second zoom level?") {
+                skipping = true
+                let zooms = Array(rMin...rMax)
+                let filteredZooms = zooms.enumerated().compactMap { $0.offset % 2 == 0 ? $0.element : nil }
+                regionTiles = regionTiles.filter { filteredZooms.contains($0.z) }
             }
             
-            let paths = try kmlManager.getPaths(buffer: buffer)
-            tiles = tileManager.calculateTileLocations(along: paths, minZ: minZ, maxZ: maxZ, buffer: buffer)
+            let regionTileSet = Set(regionTiles)
+            tileSet = tileSet.union(regionTileSet)
             
             let summary: ConsoleText =
-                "\(paths.count)".consoleText(color: .blue) +
-                    " path(s) - Min/Max Zoom: " +
-                    "\(minZ)".consoleText(color: .blue) +
-                    " / " +
-                    "\(maxZ)".consoleText(color: .blue) +
-                    "\(skippingZoom ? " skipping every second layer": "")".consoleText()
+                "\(regions.count)".consoleText(color: .cyan) +
+                " region(s) covering ~" +
+                "\(regions.reduce(0, { $0 + $1.squareKM }))".consoleText(color: .cyan) +
+                " square km - Min/Max Zoom: " +
+                "\(rMin)".consoleText(color: .cyan) +
+                " / " +
+                "\(rMax)".consoleText(color: .cyan) +
+                " - TILES: ".consoleText() +
+                "\(regionTileSet.count)".consoleText(color: .cyan) +
+                "\(skipping ? " (skipping every second layer)\n": "\n")".consoleText()
             
             terminal.output(summary)
+        } else {
+            terminal.output("No regions found.\n")
         }
         
-        if skippingZoom {
-            let zooms = Array(minZ...maxZ)
-            let filteredZooms = zooms.enumerated().compactMap { $0.offset % 2 == 0 ? $0.element : nil }
-            tiles = tiles.filter { filteredZooms.contains($0.z) }
+        let buffer = try Double(argument: terminal.ask("Path buffer distance (m)?"))
+        if let paths = try kmlManager.getPaths(buffer: buffer) {
+            terminal.output("\(paths.count)".consoleText(color: .magenta) + " paths found.\n".consoleText())
+            
+            let pMin = try Int(string: terminal.ask("Min zoom for paths?"))
+            let pMax = try Int(string: terminal.ask("Max zoom for paths?"))
+            
+            var pathTiles = tileManager.calculateTileLocations(along: paths, minZ: pMin, maxZ: pMax, buffer: buffer)
+            
+            var skipping = false
+            if terminal.confirm("Skip every second zoom level?") {
+                skipping = true
+                let zooms = Array(pMin...pMax)
+                let filteredZooms = zooms.enumerated().compactMap { $0.offset % 2 == 0 ? $0.element : nil }
+                pathTiles = pathTiles.filter { filteredZooms.contains($0.z) }
+            }
+            
+            let pathTileSet = Set(pathTiles)
+            tileSet = tileSet.union(pathTileSet)
+            
+            let summary: ConsoleText =
+                "\(paths.count)".consoleText(color: .cyan) +
+                " path(s) - Min/Max Zoom: " +
+                "\(pMin)".consoleText(color: .cyan) +
+                " / " +
+                "\(pMax)".consoleText(color: .cyan) +
+                " - TILES: ".consoleText() +
+                "\(pathTileSet.count)".consoleText(color: .cyan) +
+                "\(skipping ? " (skipping every second layer)\n": "\n")".consoleText()
+            
+            terminal.output(summary)
+        } else {
+            terminal.output("No paths found.")
         }
+        
+        let tiles = Array(tileSet)
         
         let sizeString = sizeForCount(tileCount: tiles.count)
         let dbPath = "\(kmlPath.path.dirname)/\(kmlPath.path.basename.components(separatedBy: ".")[0]).sqlite"
@@ -124,30 +126,6 @@ struct NewCommand: Command {
         terminal.output("Download Complete".consoleText(color: .green))
         
         try dataManager.vacuumDataase()
-    }
-}
-
-enum KMLType: String, ArgumentKind {
-    public init(argument: String) throws {
-        guard let type = KMLType(rawValue: argument) else {
-            throw Error.unknownType
-        }
-        self = type
-    }
-    
-    public static let completion: ShellCompletion = .none
-    
-    case paths
-    case regions
-    
-    enum Error: Swift.Error, LocalizedError {
-        case unknownType
-        
-        var errorDescription: String? {
-            switch self {
-            case .unknownType: return "Unknown KML Type"
-            }
-        }
     }
 }
 

@@ -74,5 +74,5 @@ func sizeForCount(tileCount: Int) -> String {
     let sizeDoub = NSDecimalNumber(decimal: sizeDec).doubleValue
     let sizeValue = round(sizeDoub)
     
-    return "\(tileCount) tiles @ estimated \(sizeValue) \(sizeString)"
+    return "~\(tileCount) tiles @ estimated ~\(sizeValue) \(sizeString)"
 }

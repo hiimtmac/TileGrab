@@ -19,7 +19,7 @@ struct KmlCommand: Command {
     
     init(parser: ArgumentParser, terminal: Terminal) {
         let subparser = parser.add(subparser: command, overview: overview)
-        self.kmlPathArg = subparser.add(option: "--attributes", shortName: "-a", kind: PathArgument.self, usage: "Path to kml file with regions", completion: .filename)
+        self.kmlPathArg = subparser.add(option: "--attribute-file", shortName: "-a", kind: PathArgument.self, usage: "Path to kml file with regions", completion: .filename)
         self.terminal = terminal
     }
     
@@ -30,6 +30,8 @@ struct KmlCommand: Command {
         } else {
             kmlPath = try PathArgument(argument: terminal.ask("Path for attributes file? (kml)"))
         }
+        
+        let jsonPath = "\(kmlPath.path.dirname)/\(kmlPath.path.basename.components(separatedBy: ".")[0]).json"
 
         let kmlManager = try KMLManager(kmlPath: kmlPath.path.asString)
         kmlManager.makeDocument()

@@ -94,8 +94,8 @@ class DatabaseManager {
             let maxY = try Int.fetchOne(db, "SELECT max(y) FROM tiles")!
             let minY = try Int.fetchOne(db, "SELECT min(y) FROM tiles")!
             
-            let tl = getCoordinate(x: minX, y: maxY, zoom: minZ)
-            let br = getCoordinate(x: maxX, y: minY, zoom: minZ)
+            let tl = getCoordinate(x: minX, y: minY, zoom: minZ)
+            let br = getCoordinate(x: maxX, y: maxY, zoom: minZ)
             
             let info = DBInfo(tl: tl, br: br, min: minZ, max: maxZ)
             try info.insert(db)
