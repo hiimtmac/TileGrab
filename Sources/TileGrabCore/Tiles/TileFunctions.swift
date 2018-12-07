@@ -60,7 +60,7 @@ func getCoordinate(distance: CLLocationDistance, from: CLLocationCoordinate2D, d
 
 func sizeForCount(tileCount: Int) -> String {
     guard tileCount > 0 else {
-        return "No tiles."
+        return "no tiles"
     }
     
     let avgByteSize = 15000.0

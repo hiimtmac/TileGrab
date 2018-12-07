@@ -21,6 +21,6 @@ public final class TileGrab {
 
         registry.run()
         
-        terminal.print("Done, thanks for playing!")
+        terminal.print("Done, thanks for playing!\n")
     }
 }

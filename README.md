@@ -10,42 +10,48 @@ OVERVIEW: Tile Grab
 
 USAGE: TileGrab <command> <options>
 
-OPTIONS:
-  --max            Max Zoom
-  --min            Min Zoom
-  --skipping, -s   Skips every second zoom level
-  --help           Display available options
-
 SUBCOMMANDS:
-  fill             Continues downloading tiles that have no tile data
-  kml              Get kml attributes into database
-  new              Create new sqlite file from kml polygons & downloads
+  fill                    Continues downloading tiles that have no tile data
+  info                    Gathers info for map
+  kml                     Get kml attributes into database
+  new                     Create new sqlite file from kml polygons & downloads
 ```
 
-Given this kml with square regions:
+Given this kml with square regions & paths:
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
 <Document>
+	<name>linregion.kml</name>
 	<Folder>
+		<name>My Places</name>
 		<Placemark>
-			<name>Untitled Polygon</name>
-			<Polygon>
-				<outerBoundaryIs>
-					<LinearRing>
-						<coordinates>
-							-97.30820213107882,49.86876149052599,0 -97.30175254204751,49.87809028839774,0 -97.10480092301432,49.87648615587585,0 -97.10231632712512,49.98874992911571,0 -97.30523756390956,49.99041769941383,0 -97.30820213107882,49.86876149052599,0
-						</coordinates>
-					</LinearRing>
-				</outerBoundaryIs>
-			</Polygon>
+			<name>Untitled Path</name>
+			<styleUrl>#m_ylw-pushpin0</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					-92.18532057009899,53.88963022981158,0 -92.30914992927097,53.94421596839025,0 -92.40428665630037,53.81766406180642,0 -92.29905355151683,53.78173114341524,0
+				</coordinates>
+			</LineString>
+		</Placemark>
+		<Placemark>
+			<name>Untitled Path</name>
+			<styleUrl>#m_ylw-pushpin0</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					-92.18144935958509,53.86818269779932,0 -91.94170365992156,53.76223239495038,0
+				</coordinates>
+			</LineString>
 		</Placemark>
 		<Placemark>
 			<name>Untitled Polygon</name>
 			<Polygon>
+				<tessellate>1</tessellate>
 				<outerBoundaryIs>
 					<LinearRing>
-						<coordinates>
+                        <coordinates>
 							-97.11916575339225,49.75906878471699,0 -96.88574125365628,49.75689484141393,0 -96.88201385193963,49.90532949199989,0 -97.117084672437,49.90696158224812,0 -97.11916575339225,49.75906878471699,0
 						</coordinates>
 					</LinearRing>
@@ -57,7 +63,7 @@ Given this kml with square regions:
 </kml>
 ```
 
-This program will create regions and find all the tiles necessary for a given zoom range.
+This program will create regions and paths with a distance buffer, then find all the tiles necessary for a given zoom range.
 
 > Warning: Every zoom level will increase the amount of tiles & size by 4 as each tile has 4 child tiles for the next zoom level
 
@@ -72,8 +78,7 @@ hiimtmac$ .build/debug/TileGrab new --help
 OVERVIEW: Create new sqlite file from kml polygons & downloads
 
 OPTIONS:
-  --database, -d   Path to database file output
-  --regions, -r    Path to kml file with regions
+  --kml-file, -k   Path to kml file.
 ```
 
 ## Fill
@@ -92,12 +97,17 @@ OPTIONS:
 
 ## Info
 
-TBD
+```shell
+hiimtmac$ .build/debug/TileGrab info --help
+```
+```shell
+OVERVIEW: Gathers info for map
 
-Info about the map will go here. Stuff such as:
-* Starting zoom level
-* Starting bounding box
-* ???
+OPTIONS:
+  --database, -d   Path to database file output
+```
+
+The `info` command will create an entry into the database with a top left coordinate, bottom right coordinate, min zoom & max zoom of the tiles contained in the db
 
 ## KML
 
@@ -136,15 +146,9 @@ hiimtmac$ .build/debug/TileGrab kml --help
 OVERVIEW: Get kml attributes into database
 
 OPTIONS:
-  --attributes, -a   Path to kml file with regions
-  --database, -d     Path to database file output
+  --attribute-file, -a   Path to kml file with regions
+  --pretty-print, -p     Ouput pretty printed
 ```
-
-### Todo
-
-- [x] Points (sorta)
-- [ ] Polylines
-- [ ] Polygons
 
 ## IOS Usage
 
@@ -153,38 +157,61 @@ This was designed with the intent to download tiles into a single database file 
 ## Example
 
 ```shell
-hiimtmac$ .build/debug/TileGrab new
-Path for regions file? (kml)
-> /Users/hiimtmac/desktop/regions.kml
-Path for database file? (sqlite)
-> /Users/hiimtmac/desktop/test.sqlite
-Min Zoom
+hiimtmac$ .build/debug/TileGrab new -k ~/Desktop/linregion.kml
+3 regions found.
+
+Min zoom for regions?
+> 10
+Max zoom for regions?
+> 11
+Skip every second zoom level?
+y/n> n
+3 region(s) covering ~65098.0 square km - Min/Max Zoom: 10 / 11 - TILES: 700
+
+Path buffer distance (m)?
+> 200
+9 paths found.
+
+Min zoom for paths?
 > 12
-Max Zoom
-> 14
-Inserting 3255 locations into database...
-38 region(s) covering ~2912.0 square km - Min/Max Zoom: 12 / 14
-Download will grab 3255 tiles @ estimated 47.0 MB to /Users/hiimtmac/desktop/test.sqlite. Continue?
+Max zoom for paths?
+> 13
+Skip every second zoom level?
+y/n> n
+9 path(s) - Min/Max Zoom: 12 / 13 - TILES: 1290
+
+Download will grab ~1990 tiles @ estimated ~28.0 MB to /Users/hiimtmac/Desktop/linregion.sqlite. Continue?
 y/n> y
-Fetching 3255 tiles...
-Success 2 of 3255: x=3945 y=5331 z=14
-Success 3 of 3255: x=3927 y=5355 z=14
+Inserting 1990 locations into database...
+Fetching 1990 tiles...
+Success 27 of 1990: 2061/2656/13
+Success 104 of 1990: 2015/2688/13
 ...
-Success 3220 of 3255: x=3921 y=5347 z=14
-Success 3246 of 3255: x=3966 y=5372 z=14
+Success 1961 of 1990: 500/677/11
+Success 1964 of 1990: 503/677/11
 Download Complete
 Vacuuming Database...
 Vacuum Complete
 Done, thanks for playing!
 
-hiimtmac$ .build/debug/TileGrab kml
-Path for attributes file? (kml)
-> /Users/hiimtmac/Desktop/placemarks.kml
-Path for database file? (sqlite)
-> /Users/hiimtmac/Desktop/test.sqlite
-Saving 3 points to database...
+hiimtmac$ .build/debug/TileGrab fill -d ~/Desktop/linregion.sqlite
+Download will grab no tiles to /Users/hiimtmac/Desktop/linregion.sqlite. Continue?
+y/n> y
+Fetching 0 tiles...
+Download Complete
 Vacuuming Database...
 Vacuum Complete
+Done, thanks for playing!
+
+hiimtmac$ .build/debug/TileGrab info -d ~/Desktop/linregion.sqlite
+Info Set
+Vacuuming Database...
+Vacuum Complete
+Done, thanks for playing!
+
+hiimtmac$ .build/debug/TileGrab kml -a ~/Desktop/group3full.kml -p
+Replacing 143 style mappings...
+Pretty printed output created successfully: TRUE
 Done, thanks for playing!
 ```
 > Note: Download is async so they dont necessarily finish in order
