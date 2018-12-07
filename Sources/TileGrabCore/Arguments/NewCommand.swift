@@ -68,7 +68,7 @@ struct NewCommand: Command {
             terminal.output("No regions found.\n")
         }
         
-        let buffer = try Double(argument: terminal.ask("Path buffer distance (m)?"))
+        let buffer = try Double(string: terminal.ask("Path buffer distance (m)?"))
         if let paths = try kmlManager.getPaths(buffer: buffer) {
             terminal.output("\(paths.count)".consoleText(color: .magenta) + " paths found.\n".consoleText())
             
@@ -126,26 +126,5 @@ struct NewCommand: Command {
         terminal.output("Download Complete".consoleText(color: .green))
         
         try dataManager.vacuumDataase()
-    }
-}
-
-extension Double: ArgumentKind {
-    public init(argument: String) throws {
-        guard let double = Double(argument) else {
-            throw Error.nonNumeric
-        }
-        self = double
-    }
-    
-    public static let completion: ShellCompletion = .none
-    
-    enum Error: Swift.Error, LocalizedError {
-        case nonNumeric
-        
-        var errorDescription: String? {
-            switch self {
-            case .nonNumeric: return "Non-numeric buffer"
-            }
-        }
     }
 }

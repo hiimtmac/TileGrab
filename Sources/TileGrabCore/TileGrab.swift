@@ -23,10 +23,4 @@ public final class TileGrab {
         
         terminal.print("Done, thanks for playing!")
     }
-    
-    enum Error: Swift.Error {
-        case badInput
-        case noName
-        case noTiles
-    }
 }
