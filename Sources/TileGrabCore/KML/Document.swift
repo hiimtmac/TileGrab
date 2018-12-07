@@ -8,7 +8,7 @@
 import Foundation
 import SWXMLHash
 
-struct KMLDocument: XMLIndexerDeserializable {
+struct KMLDocument: XMLIndexerDeserializable, JSONKMLConvertable {
     let name: String
     let styles: [KMLStyle]?
     let styleMaps: [KMLStyleMap]?
@@ -51,4 +51,56 @@ struct KMLDocument: XMLIndexerDeserializable {
             placemarks: placemarks
         )
     }
+    
+    func encode() -> JSONDocument {
+        let points = placemarks?
+            .compactMap { $0 as? KMLPointPlacemark }
+            .map { $0.encode() } ?? []
+        
+        let polylines = placemarks?
+            .compactMap { $0 as? KMLLineStringPlacemark }
+            .map { $0.encode() } ?? []
+        let multiPolylines = placemarks?
+            .compactMap { $0 as? KMLMultiGeometryLineStringPlacemark }
+            .map { $0.encode() } ?? []
+        
+        let polygons = placemarks?
+            .compactMap { $0 as? KMLPolygonPlacemark }
+            .map { $0.encode() } ?? []
+        let multiPolygons = placemarks?
+            .compactMap { $0 as? KMLMultiGeometryPolygonPlacemark }
+            .map { $0.encode() } ?? []
+        
+        let f = folders?
+            .map { $0.encode() } ?? []
+        
+        return JSONDocument.init(
+            name: name,
+            folders: f,
+            points: points,
+            polylines: polylines + multiPolylines,
+            polygons: polygons + multiPolygons
+        )
+    }
+    
+    func styleMapMappings() -> [String: String] {
+        guard let maps = styleMaps else { return [:] }
+        
+        var mappingKeys = [String: String]()
+        for map in maps {
+            if let normal = map.pairs.filter({ $0.key == .normal }).first {
+                mappingKeys[map.id] = normal.styleUrl
+            }
+        }
+        
+        return mappingKeys
+    }
+}
+
+struct JSONDocument: Encodable {
+    let name: String
+    let folders: [JSONFolder]
+    let points: [JSONPointPlacemark]
+    let polylines: [JSONPolylinePlacemark]
+    let polygons: [JSONPolygonPlacemark]
 }

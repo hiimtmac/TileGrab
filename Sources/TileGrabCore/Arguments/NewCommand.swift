@@ -29,7 +29,7 @@ struct NewCommand: Command {
         }
         
         var tileSet = Set<DBTile>()
-        let kmlManager = try KMLManager(kmlPath: kmlPath.path.asString)
+        let kmlManager = try KMLManager(kmlPath: kmlPath.path.asString, terminal: terminal)
         let tileManager = TileManager()
         
         if let regions = try kmlManager.getRegions() {

@@ -7,11 +7,12 @@
 
 import Foundation
 import SWXMLHash
+import CoreLocation
 
 class KMLPlacemark {
     let name: String?
     let description: String?
-    let styleUrl: String?
+    var styleUrl: String?
     
     init(name: String?, description: String?, styleUrl: String?) {
         self.name = name
@@ -20,7 +21,14 @@ class KMLPlacemark {
     }
 }
 
-final class KMLLineStringPlacemark: KMLPlacemark, XMLIndexerDeserializable {
+struct JSONPolylinePlacemark: Encodable {
+    let name: String?
+    let description: String?
+    let styleUrl: String?
+    let polyline: [CLLocationCoordinate2D]
+}
+
+final class KMLLineStringPlacemark: KMLPlacemark, XMLIndexerDeserializable, JSONKMLConvertable {
     let lineString: KMLLineString
     
     init(name: String?, description: String?, styleUrl: String?, lineString: KMLLineString) {
@@ -36,9 +44,18 @@ final class KMLLineStringPlacemark: KMLPlacemark, XMLIndexerDeserializable {
             lineString: element["LineString"].value()
         )
     }
+    
+    func encode() -> JSONPolylinePlacemark {
+        return JSONPolylinePlacemark.init(
+            name: name,
+            description: description,
+            styleUrl: styleUrl,
+            polyline: lineString.coordinates
+        )
+    }
 }
 
-final class KMLMultiGeometryLineStringPlacemark: KMLPlacemark, XMLIndexerDeserializable {
+final class KMLMultiGeometryLineStringPlacemark: KMLPlacemark, XMLIndexerDeserializable, JSONKMLConvertable {
     let multiGeometryLineString: KMLMultiGeometryLineString
     
     init(name: String?, description: String?, styleUrl: String?, multiGeometryLineString: KMLMultiGeometryLineString) {
@@ -54,9 +71,25 @@ final class KMLMultiGeometryLineStringPlacemark: KMLPlacemark, XMLIndexerDeseria
             multiGeometryLineString: element["MultiGeometry"].value()
         )
     }
+    
+    func encode() -> JSONPolylinePlacemark {
+        return JSONPolylinePlacemark.init(
+            name: name,
+            description: description,
+            styleUrl: styleUrl,
+            polyline: multiGeometryLineString.lineString.coordinates
+        )
+    }
 }
 
-final class KMLPolygonPlacemark: KMLPlacemark, XMLIndexerDeserializable {
+struct JSONPolygonPlacemark: Encodable {
+    let name: String?
+    let description: String?
+    let styleUrl: String?
+    let polygon: [CLLocationCoordinate2D]
+}
+
+final class KMLPolygonPlacemark: KMLPlacemark, XMLIndexerDeserializable, JSONKMLConvertable {
     let polygon: KMLPolygon
     
     init(name: String?, description: String?, styleUrl: String?, polygon: KMLPolygon) {
@@ -72,9 +105,18 @@ final class KMLPolygonPlacemark: KMLPlacemark, XMLIndexerDeserializable {
             polygon: element["Polygon"].value()
         )
     }
+    
+    func encode() -> JSONPolygonPlacemark {
+        return JSONPolygonPlacemark.init(
+            name: name,
+            description: description,
+            styleUrl: styleUrl,
+            polygon: polygon.outerBoundaryIs.linearRing.coordinates
+        )
+    }
 }
 
-final class KMLMultiGeometryPolygonPlacemark: KMLPlacemark, XMLIndexerDeserializable {
+final class KMLMultiGeometryPolygonPlacemark: KMLPlacemark, XMLIndexerDeserializable, JSONKMLConvertable {
     let multiGeometryPolygon: KMLMultiGeometryPolygon
     
     init(name: String?, description: String?, styleUrl: String?, multiGeometryPolygon: KMLMultiGeometryPolygon) {
@@ -90,9 +132,25 @@ final class KMLMultiGeometryPolygonPlacemark: KMLPlacemark, XMLIndexerDeserializ
             multiGeometryPolygon: element["MultiGeometry"].value()
         )
     }
+    
+    func encode() -> JSONPolygonPlacemark {
+        return JSONPolygonPlacemark.init(
+            name: name,
+            description: description,
+            styleUrl: styleUrl,
+            polygon: multiGeometryPolygon.polygon.outerBoundaryIs.linearRing.coordinates
+        )
+    }
 }
 
-final class KMLPointPlacemark: KMLPlacemark, XMLIndexerDeserializable {
+struct JSONPointPlacemark: Encodable {
+    let name: String?
+    let description: String?
+    let styleUrl: String?
+    let point: CLLocationCoordinate2D
+}
+
+final class KMLPointPlacemark: KMLPlacemark, XMLIndexerDeserializable, JSONKMLConvertable {
     let point: KMLPoint
 
     init(name: String?, description: String?, styleUrl: String?, point: KMLPoint) {
@@ -106,6 +164,15 @@ final class KMLPointPlacemark: KMLPlacemark, XMLIndexerDeserializable {
             description: element["description"].value(),
             styleUrl: element["styleUrl"].value(),
             point: element["Point"].value()
+        )
+    }
+    
+    func encode() -> JSONPointPlacemark {
+        return JSONPointPlacemark.init(
+            name: name,
+            description: description,
+            styleUrl: styleUrl,
+            point: point.coordinates
         )
     }
 }

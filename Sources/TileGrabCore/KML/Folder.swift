@@ -8,9 +8,9 @@
 import Foundation
 import SWXMLHash
 
-struct KMLFolder: XMLIndexerDeserializable {
+struct KMLFolder: XMLIndexerDeserializable, JSONKMLConvertable {
     let name: String
-    let desc: String?
+    let description: String?
     let documents: [KMLDocument]?
     let folders: [KMLFolder]?
     let placemarks: [KMLPlacemark]?
@@ -45,10 +45,62 @@ struct KMLFolder: XMLIndexerDeserializable {
         
         return try KMLFolder.init(
             name: element["name"].value(),
-            desc: element["description"].value(),
+            description: element["description"].value(),
             documents: element["Document"].value(),
             folders: element["Folder"].value(),
             placemarks: placemarks
         )
     }
+    
+    func encode() -> JSONFolder {
+        let points = placemarks?
+            .compactMap { $0 as? KMLPointPlacemark }
+            .map { $0.encode() } ?? []
+        
+        let polylines = placemarks?
+            .compactMap { $0 as? KMLLineStringPlacemark }
+            .map { $0.encode() } ?? []
+        let multiPolylines = placemarks?
+            .compactMap { $0 as? KMLMultiGeometryLineStringPlacemark }
+            .map { $0.encode() } ?? []
+        
+        let polygons = placemarks?
+            .compactMap { $0 as? KMLPolygonPlacemark }
+            .map { $0.encode() } ?? []
+        let multiPolygons = placemarks?
+            .compactMap { $0 as? KMLMultiGeometryPolygonPlacemark }
+            .map { $0.encode() } ?? []
+        
+        let f = folders?
+            .map { $0.encode() } ?? []
+        
+        let d = documents?
+            .map { $0.encode() } ?? []
+        
+        return JSONFolder.init(
+            name: name,
+            description: description,
+            documents: d,
+            folders: f,
+            points: points,
+            polylines: polylines + multiPolylines,
+            polygons: polygons + multiPolygons
+        )
+    }
+    
+    func subDocuments() -> [KMLDocument] {
+        let myDocs = documents ?? []
+        let subFolderDocs = folders?.reduce([KMLDocument](), { $0 + $1.subDocuments() }) ?? []
+        return myDocs + subFolderDocs
+    }
+}
+
+struct JSONFolder: Encodable {
+    let name: String
+    let description: String?
+    let documents: [JSONDocument]
+    let folders: [JSONFolder]
+    let points: [JSONPointPlacemark]
+    let polylines: [JSONPolylinePlacemark]
+    let polygons: [JSONPolygonPlacemark]
 }

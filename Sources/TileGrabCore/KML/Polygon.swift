@@ -7,6 +7,7 @@
 
 import Foundation
 import SWXMLHash
+import CoreLocation
 
 struct KMLPolygon: XMLIndexerDeserializable {
     let tessellate: Int?
@@ -28,4 +29,8 @@ struct KMLOuterBoundaryIs: XMLIndexerDeserializable {
             linearRing: element["LinearRing"].value()
         )
     }
+}
+
+struct JSONPolygon: Encodable {
+    let coordinates: [CLLocationCoordinate2D]
 }

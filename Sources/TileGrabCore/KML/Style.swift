@@ -9,17 +9,42 @@ import Foundation
 import SWXMLHash
 
 struct KMLStyle: XMLIndexerDeserializable {
+    let id: String
     let iconStyle: IconStyle?
     let labelStyle: LabelStyle?
     let listStyle: ListStyle?
     let lineStyle: LineStyle?
+    let polyStyle: PolyStyle?
     
     static func deserialize(_ element: XMLIndexer) throws -> KMLStyle {
+        let id: String = try element.value(ofAttribute: "id")
         return try KMLStyle.init(
+            id: "#\(id)",
             iconStyle: element["IconStyle"].value(),
             labelStyle: element["LabelStyle"].value(),
             listStyle: element["ListStyle"].value(),
-            lineStyle: element["LineStyle"].value()
+            lineStyle: element["LineStyle"].value(),
+            polyStyle: element["PolyStyle"].value()
+        )
+    }
+}
+
+extension KMLStyle: Equatable, Hashable {
+    static func ==(lhs: KMLStyle, rhs: KMLStyle) -> Bool {
+        return lhs.id == rhs.id
+    }
+    
+    var hashValue: Int {
+        return id.hashValue
+    }
+}
+
+struct PolyStyle: XMLIndexerDeserializable {
+    let color: String?
+    
+    static func deserialize(_ element: XMLIndexer) throws -> PolyStyle {
+        return try PolyStyle.init(
+            color: element["color"].value()
         )
     }
 }
