@@ -16,6 +16,8 @@ struct KMLFolder: XMLIndexerDeserializable, JSONKMLConvertable {
     let placemarks: [KMLPlacemark]?
     
     static func deserialize(_ element: XMLIndexer) throws -> KMLFolder {
+//        print("Folder: ",element["name"].element!.text)
+
         let points: [KMLPointPlacemark]? = try element["Placemark"]
             .filterAll({ e, _ in e.innerXML.contains("Point") })
             .value()
@@ -43,6 +45,8 @@ struct KMLFolder: XMLIndexerDeserializable, JSONKMLConvertable {
         placemarks = placemarks + (lineStrings ?? [])
         placemarks = placemarks + (multiLineStrings ?? [])
         
+//        print(placemarks)
+        
         return try KMLFolder.init(
             name: element["name"].value(),
             description: element["description"].value(),
@@ -56,7 +60,7 @@ struct KMLFolder: XMLIndexerDeserializable, JSONKMLConvertable {
         let points = placemarks?
             .compactMap { $0 as? KMLPointPlacemark }
             .map { $0.encode() } ?? []
-        
+                
         let polylines = placemarks?
             .compactMap { $0 as? KMLLineStringPlacemark }
             .map { $0.encode() } ?? []
@@ -83,8 +87,10 @@ struct KMLFolder: XMLIndexerDeserializable, JSONKMLConvertable {
             documents: d,
             folders: f,
             points: points,
-            polylines: polylines + multiPolylines,
-            polygons: polygons + multiPolygons
+            polylines: polylines,
+            multiPolylines: multiPolylines,
+            polygons: polygons,
+            multiPolygons: multiPolygons
         )
     }
     
@@ -102,5 +108,7 @@ struct JSONFolder: Encodable {
     let folders: [JSONFolder]
     let points: [JSONPointPlacemark]
     let polylines: [JSONPolylinePlacemark]
+    let multiPolylines: [JSONMultiGeometryPolylinePlacemark]
     let polygons: [JSONPolygonPlacemark]
+    let multiPolygons: [JSONMultiGeometryPolygonPlacemark]
 }

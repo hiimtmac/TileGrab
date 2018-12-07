@@ -55,6 +55,13 @@ final class KMLLineStringPlacemark: KMLPlacemark, XMLIndexerDeserializable, JSON
     }
 }
 
+struct JSONMultiGeometryPolylinePlacemark: Encodable {
+    let name: String?
+    let description: String?
+    let styleUrl: String?
+    let polylines: [[CLLocationCoordinate2D]]
+}
+
 final class KMLMultiGeometryLineStringPlacemark: KMLPlacemark, XMLIndexerDeserializable, JSONKMLConvertable {
     let multiGeometryLineString: KMLMultiGeometryLineString
     
@@ -72,12 +79,12 @@ final class KMLMultiGeometryLineStringPlacemark: KMLPlacemark, XMLIndexerDeseria
         )
     }
     
-    func encode() -> JSONPolylinePlacemark {
-        return JSONPolylinePlacemark.init(
+    func encode() -> JSONMultiGeometryPolylinePlacemark {
+        return JSONMultiGeometryPolylinePlacemark.init(
             name: name,
             description: description,
             styleUrl: styleUrl,
-            polyline: multiGeometryLineString.lineString.coordinates
+            polylines: multiGeometryLineString.lineStrings?.map { $0.coordinates } ?? []
         )
     }
 }
@@ -116,6 +123,13 @@ final class KMLPolygonPlacemark: KMLPlacemark, XMLIndexerDeserializable, JSONKML
     }
 }
 
+struct JSONMultiGeometryPolygonPlacemark: Encodable {
+    let name: String?
+    let description: String?
+    let styleUrl: String?
+    let polygons: [[CLLocationCoordinate2D]]
+}
+
 final class KMLMultiGeometryPolygonPlacemark: KMLPlacemark, XMLIndexerDeserializable, JSONKMLConvertable {
     let multiGeometryPolygon: KMLMultiGeometryPolygon
     
@@ -133,12 +147,12 @@ final class KMLMultiGeometryPolygonPlacemark: KMLPlacemark, XMLIndexerDeserializ
         )
     }
     
-    func encode() -> JSONPolygonPlacemark {
-        return JSONPolygonPlacemark.init(
+    func encode() -> JSONMultiGeometryPolygonPlacemark {
+        return JSONMultiGeometryPolygonPlacemark.init(
             name: name,
             description: description,
             styleUrl: styleUrl,
-            polygon: multiGeometryPolygon.polygon.outerBoundaryIs.linearRing.coordinates
+            polygons: multiGeometryPolygon.polygons?.map { $0.outerBoundaryIs.linearRing.coordinates } ?? []
         )
     }
 }

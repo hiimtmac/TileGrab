@@ -9,21 +9,21 @@ import Foundation
 import SWXMLHash
 
 struct KMLMultiGeometryLineString: XMLIndexerDeserializable {
-    let lineString: KMLLineString
+    let lineStrings: [KMLLineString]?
     
     static func deserialize(_ element: XMLIndexer) throws -> KMLMultiGeometryLineString {
         return try KMLMultiGeometryLineString.init(
-            lineString: element["LineString"].value()
+            lineStrings: element["LineString"].value()
         )
     }
 }
 
 struct KMLMultiGeometryPolygon: XMLIndexerDeserializable {
-    let polygon: KMLPolygon
+    let polygons: [KMLPolygon]?
     
     static func deserialize(_ element: XMLIndexer) throws -> KMLMultiGeometryPolygon {
         return try KMLMultiGeometryPolygon.init(
-            polygon: element["Polygon"].value()
+            polygons: element["Polygon"].value()
         )
     }
 }
