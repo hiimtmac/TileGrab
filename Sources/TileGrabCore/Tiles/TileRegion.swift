@@ -12,7 +12,7 @@ struct TileRegion {
     let tl: CLLocationCoordinate2D
     let br: CLLocationCoordinate2D
     
-    func tiles(minZ: Int, maxZ: Int) -> Set<DBTile> {
+    func tiles(minZ: Int, maxZ: Int, buffer: Double) -> Set<DBTile> {
         let y1 = getYTile(location: tl, at: minZ)
         let x1 = getXTile(location: tl, at: minZ)
 

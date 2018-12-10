@@ -56,6 +56,7 @@ struct TilePath {
                     locations.insert(t)
                 }
             }
+            
             if tile.rightBuffer(for: coordinate) < buffer {
                 let rightCoord = getCoordinate(distance: buffer, from: coordinate, deg: 90)
                 let rightX = getXTile(location: rightCoord, at: minZ)
@@ -64,6 +65,7 @@ struct TilePath {
                     locations.insert(t)
                 }
             }
+            
             if tile.topBuffer(for: coordinate) < buffer {
                 let topCoord = getCoordinate(distance: buffer, from: coordinate, deg: 0)
                 let topY = getYTile(location: topCoord, at: minZ)
@@ -72,6 +74,7 @@ struct TilePath {
                     locations.insert(t)
                 }
             }
+            
             if tile.bottomBuffer(for: coordinate) < buffer {
                 let botCoord = getCoordinate(distance: buffer, from: coordinate, deg: 180)
                 let botY = getYTile(location: botCoord, at: minZ)

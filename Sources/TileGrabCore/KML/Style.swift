@@ -8,7 +8,8 @@
 import Foundation
 import SWXMLHash
 
-struct KMLStyle: XMLIndexerDeserializable {
+typealias JSONStyle = KMLStyle
+struct KMLStyle: XMLIndexerDeserializable, Encodable {
     let id: String
     let iconStyle: IconStyle?
     let labelStyle: LabelStyle?
@@ -39,7 +40,7 @@ extension KMLStyle: Equatable, Hashable {
     }
 }
 
-struct PolyStyle: XMLIndexerDeserializable {
+struct PolyStyle: XMLIndexerDeserializable, Encodable {
     let color: String?
     
     static func deserialize(_ element: XMLIndexer) throws -> PolyStyle {
@@ -49,7 +50,7 @@ struct PolyStyle: XMLIndexerDeserializable {
     }
 }
 
-struct IconStyle: XMLIndexerDeserializable {
+struct IconStyle: XMLIndexerDeserializable, Encodable {
     let color: String?
     let scale: Double?
     let icon: Icon?
@@ -63,7 +64,7 @@ struct IconStyle: XMLIndexerDeserializable {
     }
 }
 
-struct Icon: XMLIndexerDeserializable {
+struct Icon: XMLIndexerDeserializable, Encodable {
     let href: String
     
     static func deserialize(_ element: XMLIndexer) throws -> Icon {
@@ -73,7 +74,7 @@ struct Icon: XMLIndexerDeserializable {
     }
 }
 
-struct LabelStyle: XMLIndexerDeserializable {
+struct LabelStyle: XMLIndexerDeserializable, Encodable {
     let color: String?
     let scale: Double?
     
@@ -85,7 +86,7 @@ struct LabelStyle: XMLIndexerDeserializable {
     }
 }
 
-struct LineStyle: XMLIndexerDeserializable {
+struct LineStyle: XMLIndexerDeserializable, Encodable {
     let color: String?
     let width: Double?
     
@@ -97,7 +98,7 @@ struct LineStyle: XMLIndexerDeserializable {
     }
 }
 
-struct ListStyle: XMLIndexerDeserializable {
+struct ListStyle: XMLIndexerDeserializable, Encodable {
     let itemIcon: ItemIcon?
     let listItemType: String?
     
@@ -109,7 +110,7 @@ struct ListStyle: XMLIndexerDeserializable {
     }
 }
 
-struct ItemIcon: XMLIndexerDeserializable {
+struct ItemIcon: XMLIndexerDeserializable, Encodable {
     let href: String
 
     static func deserialize(_ element: XMLIndexer) throws -> ItemIcon {

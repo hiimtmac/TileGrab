@@ -77,8 +77,11 @@ struct KMLDocument: XMLIndexerDeserializable, JSONKMLConvertable {
         let f = folders?
             .map { $0.encode() } ?? []
         
+        let s = styles ?? []
+        
         return JSONDocument.init(
             name: name,
+            styles: s,
             folders: f,
             points: points,
             polylines: polylines,
@@ -104,6 +107,7 @@ struct KMLDocument: XMLIndexerDeserializable, JSONKMLConvertable {
 
 struct JSONDocument: Encodable {
     let name: String
+    let styles: [JSONStyle]
     let folders: [JSONFolder]
     let points: [JSONPointPlacemark]
     let polylines: [JSONPolylinePlacemark]

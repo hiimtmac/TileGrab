@@ -10,9 +10,9 @@ import GRDB
 import Console
 
 class TileManager {
-    func calculateTileLocations(for regions: [TileRegion], minZ: Int, maxZ: Int) -> [DBTile] {
+    func calculateTileLocations(for regions: [TileRegion], minZ: Int, maxZ: Int, buffer: Double) -> [DBTile] {
         let tiles = regions.reduce(Set<DBTile>()) { tiles, region -> Set<DBTile> in
-            let regionTiles = region.tiles(minZ: minZ, maxZ: maxZ)
+            let regionTiles = region.tiles(minZ: minZ, maxZ: maxZ, buffer: buffer)
             return tiles.union(regionTiles)
         }
         return Array(tiles)

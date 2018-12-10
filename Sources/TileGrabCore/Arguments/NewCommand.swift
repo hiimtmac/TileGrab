@@ -28,17 +28,19 @@ struct NewCommand: Command {
             throw ArgumentParserError.expectedValue(option: "Bad path")
         }
         
+        
         var tileSet = Set<DBTile>()
         let kmlManager = try KMLManager(kmlPath: kmlPath.path.asString, terminal: terminal)
         let tileManager = TileManager()
         
+//        let regionBuffer = try Double(string: terminal.ask("Region buffer distance (m)?"))
         if let regions = try kmlManager.getRegions() {
             terminal.output("\(regions.count)".consoleText(color: .magenta) + " regions found.\n".consoleText())
             
             let rMin = try Int(string: terminal.ask("Min zoom for regions?"))
             let rMax = try Int(string: terminal.ask("Max zoom for regions?"))
             
-            var regionTiles = tileManager.calculateTileLocations(for: regions, minZ: rMin, maxZ: rMax)
+            var regionTiles = tileManager.calculateTileLocations(for: regions, minZ: rMin, maxZ: rMax, buffer: 0)//regionBuffer)
             
             var skipping = false
             if terminal.confirm("Skip every second zoom level?") {
@@ -68,14 +70,14 @@ struct NewCommand: Command {
             terminal.output("No regions found.\n")
         }
         
-        let buffer = try Double(string: terminal.ask("Path buffer distance (m)?"))
-        if let paths = try kmlManager.getPaths(buffer: buffer) {
+        let pathBuffer = try Double(string: terminal.ask("Path buffer distance (m)?"))
+        if let paths = try kmlManager.getPaths(buffer: pathBuffer) {
             terminal.output("\(paths.count)".consoleText(color: .magenta) + " paths found.\n".consoleText())
             
             let pMin = try Int(string: terminal.ask("Min zoom for paths?"))
             let pMax = try Int(string: terminal.ask("Max zoom for paths?"))
             
-            var pathTiles = tileManager.calculateTileLocations(along: paths, minZ: pMin, maxZ: pMax, buffer: buffer)
+            var pathTiles = tileManager.calculateTileLocations(along: paths, minZ: pMin, maxZ: pMax, buffer: pathBuffer)
             
             var skipping = false
             if terminal.confirm("Skip every second zoom level?") {
