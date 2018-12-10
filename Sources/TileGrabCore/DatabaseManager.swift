@@ -29,18 +29,18 @@ class DatabaseManager {
         migrator.registerMigrationWithDeferredForeignKeyCheck("v1") { db in
             try db.create(table: "tiles") { t in
                 t.primaryKey((["x","y","z"]), onConflict: .replace)
-                t.column("x", .text).notNull()
-                t.column("y", .text).notNull()
-                t.column("z", .text).notNull()
+                t.column("x", .integer).notNull()
+                t.column("y", .integer).notNull()
+                t.column("z", .integer).notNull()
                 t.column("data", .blob)
             }
             
             try db.create(table: "info") { t in
                 t.primaryKey((["tlLat","tlLon","brLat","brLon","minZ","maxZ"]), onConflict: .replace)
-                t.column("tlLat", .text).notNull()
-                t.column("tlLon", .text).notNull()
-                t.column("brLat", .text).notNull()
-                t.column("brLon", .text).notNull()
+                t.column("tlLat", .double).notNull()
+                t.column("tlLon", .double).notNull()
+                t.column("brLat", .double).notNull()
+                t.column("brLon", .double).notNull()
                 t.column("minZ", .integer).notNull()
                 t.column("maxZ", .integer).notNull()
             }
