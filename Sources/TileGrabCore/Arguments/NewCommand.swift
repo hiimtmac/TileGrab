@@ -127,6 +127,6 @@ struct NewCommand: Command {
         
         terminal.output("Download Complete".consoleText(color: .green))
         
-        try dataManager.vacuumDataase()
+        try dataManager.vacuumDatase()
     }
 }

@@ -16,6 +16,7 @@ public final class TileGrab {
         
         registry.register(command: NewCommand.self)
         registry.register(command: FillCommand.self)
+        registry.register(command: CleanCommand.self)
         registry.register(command: KmlCommand.self)
         registry.register(command: InfoCommand.self)
 

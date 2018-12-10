@@ -37,6 +37,6 @@ struct InfoCommand: Command {
         try dataManager.setInfo()
         terminal.output("Info Set".consoleText(color: .green))
         
-        try dataManager.vacuumDataase()
+        try dataManager.vacuumDatase()
     }
 }

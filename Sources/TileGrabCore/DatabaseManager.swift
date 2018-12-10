@@ -87,6 +87,8 @@ class DatabaseManager {
     
     func setInfo() throws {
         try queue.write { db in
+            let _ = try DBInfo.deleteAll(db)
+            
             let maxZ = try Int.fetchOne(db, "SELECT max(z) FROM tiles")!
             let minZ = try Int.fetchOne(db, "SELECT min(z) FROM tiles")!
             let maxX = try Int.fetchOne(db, "SELECT max(x) FROM tiles")!
@@ -102,7 +104,18 @@ class DatabaseManager {
         }
     }
     
-    func vacuumDataase() throws {
+    func cleanDatabase() throws {
+        terminal.output("Cleaning Database...")
+        try queue.writeWithoutTransaction { db in
+            let count = try DBTile
+                .filter(DBTile.Columns.data == nil)
+                .deleteAll(db)
+            terminal.output("Deleted \(count) tiles".consoleText())
+        }
+        terminal.output("Cleaning Complete".consoleText(color: .green))
+    }
+    
+    func vacuumDatase() throws {
         terminal.output("Vacuuming Database...")
         try queue.writeWithoutTransaction { db in
             try db.execute("VACUUM")

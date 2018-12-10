@@ -67,7 +67,7 @@ class DownloadManager {
                 
                 guard (200..<300).contains(httpResponse.statusCode) else {
                     let errorMessage: ConsoleText =
-                        "Error".consoleText(color: .red, isBold: true) +
+                        "Error".consoleText(color: .yellow, isBold: true) +
                             " \(index + 1) of \(tileCount): \(tile.slug)".consoleText() +
                             " - Bad Status: \(httpResponse.statusCode)".consoleText()
                     self.terminal.output(errorMessage)

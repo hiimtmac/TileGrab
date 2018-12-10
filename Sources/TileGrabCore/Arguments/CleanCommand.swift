@@ -1,18 +1,18 @@
 //
-//  FillCommand.swift
-//  TileGrabCore
+//  CleanCommand.swift
+//  Async
 //
-//  Created by Taylor McIntyre on 2018-12-03.
+//  Created by Taylor McIntyre on 2018-12-10.
 //
 
 import Foundation
 import Console
 import Utility
 
-struct FillCommand: Command {
+struct CleanCommand: Command {
     
-    let command = "fill"
-    let overview = "Continues downloading tiles that have no tile data"
+    let command = "clean"
+    let overview = "Deletes tiles that were not able to be downloaded"
     
     let terminal: Terminal
     let dbPathArg: OptionArgument<PathArgument>
@@ -33,28 +33,19 @@ struct FillCommand: Command {
         
         let dataManager = try DatabaseManager(path: dbPath.path.asString, deletingIfExists: false, terminal: terminal)
         try dataManager.migrateDatabase()
-
+        
         let tilesToFetch = try dataManager.tilesWithoutData()
         if tilesToFetch.isEmpty {
-            terminal.output("No tiles to fetch.")
+            terminal.output("No tiles to delete.")
             return
         }
         
-        let sizeString = sizeForCount(tileCount: tilesToFetch.count)
-        
-        if !terminal.confirm("Download will grab \(sizeString) to \(dbPath.path.asString). Continue?".consoleText()) {
+        if !terminal.confirm("Download will delete \(tilesToFetch.count). Continue?".consoleText()) {
             terminal.output("Oh well, maybe another time.")
             return
         }
         
-        let downloadManager = DownloadManager(databaseManager: dataManager, terminal: terminal)
-        
-        let group = DispatchGroup()
-        downloadManager.fetchMap(tiles: tilesToFetch, group: group, provider: GoogleProvider())
-        group.wait()
-        
-        terminal.output("Download Complete".consoleText(color: .green))
-        
+        try dataManager.cleanDatabase()
         try dataManager.vacuumDatase()
     }
 }
