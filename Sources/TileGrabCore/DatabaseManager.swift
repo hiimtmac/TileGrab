@@ -50,26 +50,18 @@ class DatabaseManager {
     }
     
     func tileCount() throws -> Int {
-        var count: Int?
-        
-        try queue.read { db in
-            count = try DBTile
+        return try queue.read { db in
+            return try DBTile
                 .fetchCount(db)
         }
-        
-        return count ?? 0
     }
     
     func tilesWithoutData() throws -> [DBTile] {
-        var locations: [DBTile] = []
-        
-        try queue.read { db in
-            locations = try DBTile
+        return try queue.read { db in
+            return try DBTile
                 .filter(DBTile.Columns.data == nil)
                 .fetchAll(db)
         }
-        
-        return locations
     }
     
     func insertLocations(_ tiles: [DBTile]) throws {
@@ -91,10 +83,10 @@ class DatabaseManager {
             
             let maxZ = try Int.fetchOne(db, "SELECT max(z) FROM tiles")!
             let minZ = try Int.fetchOne(db, "SELECT min(z) FROM tiles")!
-            let maxX = try Int.fetchOne(db, "SELECT max(x) FROM tiles")!
-            let minX = try Int.fetchOne(db, "SELECT min(x) FROM tiles")!
-            let maxY = try Int.fetchOne(db, "SELECT max(y) FROM tiles")!
-            let minY = try Int.fetchOne(db, "SELECT min(y) FROM tiles")!
+            let maxX = try Int.fetchOne(db, "SELECT max(x) FROM tiles WHERE z=?", arguments: [minZ])!
+            let minX = try Int.fetchOne(db, "SELECT min(x) FROM tiles WHERE z=?", arguments: [minZ])!
+            let maxY = try Int.fetchOne(db, "SELECT max(y) FROM tiles WHERE z=?", arguments: [minZ])!
+            let minY = try Int.fetchOne(db, "SELECT min(y) FROM tiles WHERE z=?", arguments: [minZ])!
             
             let tl = getCoordinate(x: minX, y: minY, zoom: minZ)
             let br = getCoordinate(x: maxX, y: maxY, zoom: minZ)

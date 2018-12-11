@@ -10,12 +10,8 @@ import Foundation
 extension Int {
     init(string: String) throws {
         guard let int = Int(string) else {
-            throw Error.conversion
+            throw ConversionError.conversion("Expected `Int`, got `\(string)`")
         }
         self = int
-    }
-    
-    enum Error: Swift.Error {
-        case conversion
     }
 }

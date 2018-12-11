@@ -10,12 +10,8 @@ import Foundation
 extension Double {
     init(string: String) throws {
         guard let double = Double(string) else {
-            throw Error.conversion
+            throw ConversionError.conversion("Expected `Double`, got `\(string)`")
         }
         self = double
-    }
-    
-    enum Error: Swift.Error {
-        case conversion
     }
 }
