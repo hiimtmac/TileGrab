@@ -42,9 +42,7 @@ struct KmlCommand: Command {
             try?  FileManager.default.removeItem(at: url)
         }
 
-        var kmlManager = try KMLManager(kmlPath: kmlPath.path.asString, terminal: terminal)
-        try kmlManager.intakeDocument()
-        
+        let kmlManager = try KMLManager(kmlPath: kmlPath.path.asString, terminal: terminal)        
         let data = try kmlManager.encode(pretty: prettyPrint)
 
         terminal.output("\(prettyPrint ? "Pretty printed o": "O")utput created successfully: ".consoleText(), newLine: false)

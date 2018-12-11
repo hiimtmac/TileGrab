@@ -78,10 +78,12 @@ struct KMLDocument: XMLIndexerDeserializable, JSONKMLConvertable {
             .map { $0.encode() } ?? []
         
         let s = styles ?? []
+        let m = styleMaps ?? []
         
         return JSONDocument.init(
             name: name,
             styles: s,
+            styleMaps: m,
             folders: f,
             points: points,
             polylines: polylines,
@@ -90,24 +92,12 @@ struct KMLDocument: XMLIndexerDeserializable, JSONKMLConvertable {
             multiPolygons: multiPolygons
         )
     }
-    
-    func styleMapMappings() -> [String: String] {
-        guard let maps = styleMaps else { return [:] }
-        
-        var mappingKeys = [String: String]()
-        for map in maps {
-            if let normal = map.pairs.filter({ $0.key == .normal }).first {
-                mappingKeys[map.id] = normal.styleUrl
-            }
-        }
-        
-        return mappingKeys
-    }
 }
 
 struct JSONDocument: Encodable {
     let name: String
     let styles: [JSONStyle]
+    let styleMaps: [JSONStyleMap]
     let folders: [JSONFolder]
     let points: [JSONPointPlacemark]
     let polylines: [JSONPolylinePlacemark]

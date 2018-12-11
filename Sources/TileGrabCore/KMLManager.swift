@@ -12,10 +12,7 @@ import CoreLocation
 
 struct KMLManager {
     let terminal: Terminal
-    
     let document: XMLIndexer
-    var parsed: KMLDocument?
-    var mappings: [String: String]?
     
     init(kmlPath: String, terminal: Terminal) throws {
         let url = URL(fileURLWithPath: kmlPath)
@@ -24,26 +21,9 @@ struct KMLManager {
         self.document = xml["kml"]["Document"]
         self.terminal = terminal
     }
-    
-    mutating func intakeDocument() throws {
-        let doc: KMLDocument = try document.value()
-        
-        let main = doc.styleMapMappings()
-        let folderDocs = doc.folders?.reduce([KMLDocument](), { $0 + $1.subDocuments() }) ?? []
-        let folderStyles = folderDocs.reduce(main, { dict, doc -> [String: String] in
-            var copy = dict
-            for pair in doc.styleMapMappings() {
-                copy[pair.key] = pair.value
-            }
-            return copy
-        })
-        
-        mappings = folderStyles
-        parsed = doc
-    }
-    
+
     func encode(pretty: Bool) throws -> Data? {
-        guard let doc = parsed else { return nil }
+        let doc: KMLDocument = try document.value()
         
         let encoder = JSONEncoder()
         if pretty {
@@ -51,19 +31,7 @@ struct KMLManager {
         }
         
         let jsondoc = doc.encode()
-        let data = try encoder.encode(jsondoc)
-        
-        if let map = mappings, var string = String(data: data, encoding: .utf8) {
-            terminal.output("Replacing \(map.count) style mappings...".consoleText())
-            
-            for pair in map {
-                string = string.replacingOccurrences(of: ">\(pair.key)<", with: ">\(pair.value)<")
-            }
-            
-            return string.data(using: .utf8)!
-        } else {
-            return data
-        }
+        return try encoder.encode(jsondoc)
     }
     
     func getRegions() throws -> [TileRegion]? {

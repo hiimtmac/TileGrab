@@ -8,7 +8,8 @@
 import Foundation
 import SWXMLHash
 
-struct KMLStyleMap: XMLIndexerDeserializable {
+typealias JSONStyleMap = KMLStyleMap
+struct KMLStyleMap: XMLIndexerDeserializable, Encodable {
     let id: String
     let pairs: [KMLPair]
     
@@ -31,7 +32,7 @@ extension KMLStyleMap: Equatable, Hashable {
     }
 }
 
-struct KMLPair: XMLIndexerDeserializable {
+struct KMLPair: XMLIndexerDeserializable, Encodable {
     let key: KMLPairKey
     let styleUrl: String
     
@@ -44,7 +45,7 @@ struct KMLPair: XMLIndexerDeserializable {
     }
 }
 
-enum KMLPairKey: String {
+enum KMLPairKey: String, Encodable {
     case normal
     case highlight
 }

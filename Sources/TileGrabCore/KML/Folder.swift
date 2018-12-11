@@ -93,12 +93,6 @@ struct KMLFolder: XMLIndexerDeserializable, JSONKMLConvertable {
             multiPolygons: multiPolygons
         )
     }
-    
-    func subDocuments() -> [KMLDocument] {
-        let myDocs = documents ?? []
-        let subFolderDocs = folders?.reduce([KMLDocument](), { $0 + $1.subDocuments() }) ?? []
-        return myDocs + subFolderDocs
-    }
 }
 
 struct JSONFolder: Encodable {
