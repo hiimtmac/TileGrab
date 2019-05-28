@@ -81,12 +81,12 @@ class DatabaseManager {
         try queue.write { db in
             let _ = try DBInfo.deleteAll(db)
             
-            let maxZ = try Int.fetchOne(db, "SELECT max(z) FROM tiles")!
-            let minZ = try Int.fetchOne(db, "SELECT min(z) FROM tiles")!
-            let maxX = try Int.fetchOne(db, "SELECT max(x) FROM tiles WHERE z=?", arguments: [minZ])!
-            let minX = try Int.fetchOne(db, "SELECT min(x) FROM tiles WHERE z=?", arguments: [minZ])!
-            let maxY = try Int.fetchOne(db, "SELECT max(y) FROM tiles WHERE z=?", arguments: [minZ])!
-            let minY = try Int.fetchOne(db, "SELECT min(y) FROM tiles WHERE z=?", arguments: [minZ])!
+            let maxZ = try Int.fetchOne(db, sql: "SELECT max(z) FROM tiles")!
+            let minZ = try Int.fetchOne(db, sql: "SELECT min(z) FROM tiles")!
+            let maxX = try Int.fetchOne(db, sql: "SELECT max(x) FROM tiles WHERE z=?", arguments: [minZ])!
+            let minX = try Int.fetchOne(db, sql: "SELECT min(x) FROM tiles WHERE z=?", arguments: [minZ])!
+            let maxY = try Int.fetchOne(db, sql: "SELECT max(y) FROM tiles WHERE z=?", arguments: [minZ])!
+            let minY = try Int.fetchOne(db, sql: "SELECT min(y) FROM tiles WHERE z=?", arguments: [minZ])!
             
             let tl = getCoordinate(x: minX, y: minY, zoom: minZ)
             let br = getCoordinate(x: maxX, y: maxY, zoom: minZ)
@@ -110,7 +110,7 @@ class DatabaseManager {
     func vacuumDatase() throws {
         terminal.output("Vacuuming Database...")
         try queue.writeWithoutTransaction { db in
-            try db.execute("VACUUM")
+            try db.execute(sql: "VACUUM")
         }
         terminal.output("Vacuum Complete".consoleText(color: .green))
     }

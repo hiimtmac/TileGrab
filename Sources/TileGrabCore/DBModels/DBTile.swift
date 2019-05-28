@@ -99,8 +99,8 @@ extension DBTile: Equatable {
 }
 
 extension DBTile: Hashable {
-    var hashValue: Int {
-        return slug.hashValue
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(slug)
     }
 }
 
