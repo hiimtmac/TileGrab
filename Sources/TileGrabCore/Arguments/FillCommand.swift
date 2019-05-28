@@ -7,7 +7,7 @@
 
 import Foundation
 import Console
-import Utility
+import SPMUtility
 
 struct FillCommand: Command {
     
@@ -31,7 +31,7 @@ struct FillCommand: Command {
             dbPath = try PathArgument(argument: terminal.ask("Path for database file? (sqlite)"))
         }
         
-        let dataManager = try DatabaseManager(path: dbPath.path.asString, deletingIfExists: false, terminal: terminal)
+        let dataManager = try DatabaseManager(path: dbPath.path.pathString, deletingIfExists: false, terminal: terminal)
         try dataManager.migrateDatabase()
 
         let tilesToFetch = try dataManager.tilesWithoutData()
@@ -42,7 +42,7 @@ struct FillCommand: Command {
         
         let sizeString = sizeForCount(tileCount: tilesToFetch.count)
         
-        if !terminal.confirm("Download will grab \(sizeString) to \(dbPath.path.asString). Continue?".consoleText()) {
+        if !terminal.confirm("Download will grab \(sizeString) to \(dbPath.path.pathString). Continue?".consoleText()) {
             terminal.output("Oh well, maybe another time.")
             return
         }

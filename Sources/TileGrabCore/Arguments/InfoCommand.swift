@@ -7,7 +7,7 @@
 
 import Foundation
 import Console
-import Utility
+import SPMUtility
 
 struct InfoCommand: Command {
     
@@ -31,7 +31,7 @@ struct InfoCommand: Command {
             dbPath = try PathArgument(argument: terminal.ask("Path for database file? (sqlite)"))
         }
         
-        let dataManager = try DatabaseManager(path: dbPath.path.asString, deletingIfExists: false, terminal: terminal)
+        let dataManager = try DatabaseManager(path: dbPath.path.pathString, deletingIfExists: false, terminal: terminal)
         try dataManager.migrateDatabase()
         
         try dataManager.setInfo()

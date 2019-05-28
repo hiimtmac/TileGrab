@@ -1,6 +1,6 @@
 import Foundation
 import Console
-import Utility
+import SPMUtility
 
 public final class TileGrab {
     private let arguments: [String]

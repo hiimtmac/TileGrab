@@ -7,7 +7,7 @@
 
 import Foundation
 import Console
-import Utility
+import SPMUtility
 
 struct KmlCommand: Command {
     
@@ -42,7 +42,7 @@ struct KmlCommand: Command {
             try?  FileManager.default.removeItem(at: url)
         }
 
-        let kmlManager = try KMLManager(kmlPath: kmlPath.path.asString, terminal: terminal)
+        let kmlManager = try KMLManager(kmlPath: kmlPath.path.pathString, terminal: terminal)
         terminal.output("Fetching filedata...".consoleText())
         let data = try kmlManager.encode(pretty: prettyPrint)
 

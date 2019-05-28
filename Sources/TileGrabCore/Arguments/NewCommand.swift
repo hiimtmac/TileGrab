@@ -7,7 +7,7 @@
 
 import Foundation
 import Console
-import Utility
+import SPMUtility
 
 struct NewCommand: Command {
     
@@ -30,7 +30,7 @@ struct NewCommand: Command {
         
         
         var tileSet = Set<DBTile>()
-        let kmlManager = try KMLManager(kmlPath: kmlPath.path.asString, terminal: terminal)
+        let kmlManager = try KMLManager(kmlPath: kmlPath.path.pathString, terminal: terminal)
         let tileManager = TileManager()
         
 //        let regionBuffer = try Double(string: terminal.ask("Region buffer distance (m)?"))
