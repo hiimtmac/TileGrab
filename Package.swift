@@ -1,4 +1,4 @@
-// swift-tools-version:4.2
+// swift-tools-version:5.0
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -6,10 +6,10 @@ import PackageDescription
 let package = Package(
     name: "TileGrab",
     dependencies: [
-        .package(url: "https://github.com/groue/GRDB.swift.git", from: "3.5.0"),
-        .package(url: "https://github.com/vapor/console.git", from: "3.0.0"),
-        .package(url: "https://github.com/apple/swift-package-manager.git", from: "0.1.0"),
-        .package(url: "https://github.com/drmohundro/SWXMLHash.git", from: "4.7.0")
+        .package(url: "https://github.com/groue/GRDB.swift.git", from: "4.0.0"),
+        .package(url: "https://github.com/vapor/console.git", from: "3.1.0"),
+        .package(url: "https://github.com/apple/swift-package-manager.git", from: "0.3.0"),
+        .package(url: "https://github.com/drmohundro/SWXMLHash.git", from: "4.9.0")
     ],
     targets: [
         .target(
